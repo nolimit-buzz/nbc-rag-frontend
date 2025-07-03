@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePDF } from 'react-to-pdf';
+import Link from "next/dist/client/link";
 
 interface Section {
   id: string;
@@ -18,7 +19,7 @@ const TiptapEditor = dynamic(() => import('@/components/TiptapEditor'), { ssr: f
 export default function DocumentEditorPage() {
   const params = useParams();
   const documentId = params.document_id as string;
-  
+
   const [sections, setSections] = useState<Section[]>([]);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>('');
@@ -26,25 +27,39 @@ export default function DocumentEditorPage() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("NBC Paper");
-  
+  const [companyName, setCompanyName] = useState("");
   // New state for API data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string>('');
   const [author, setAuthor] = useState<string>('');
   const [updatedAt, setUpdatedAt] = useState<string>('');
+  const [structuringLeads, setStructuringLeads] = useState<string>('');
   const [status, setStatus] = useState<string>('');
-  
+  const [projectDetails, setProjectDetails] = useState<string>('');
+  const [sponsors, setSponsors] = useState<string>('');
   // Preview mode state
   const [previewMode, setPreviewMode] = useState(false);
-  
+
+  // Submit for approval state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<string>('');
+
   // Regenerate state
-  // const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
+  const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
+  const [regenerateStatus, setRegenerateStatus] = useState<string>('');
+
+  // Notification state
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    visible: boolean;
+  } | null>(null);
 
   // PDF generation
   const { toPDF, targetRef } = usePDF({
     filename: `${titleInput.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_nbc_paper.pdf`,
-    page: { 
+    page: {
       margin: 30,
       format: 'a4',
       orientation: 'portrait'
@@ -52,37 +67,45 @@ export default function DocumentEditorPage() {
     method: 'save'
   });
 
+  // Helper function to show notifications
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ message, type, visible: true });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  };
+
   // Fetch NBC paper data
   useEffect(() => {
     console.log(documentId);
     const fetchNbcPaper = async () => {
       if (!documentId) return;
-      
+
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch NBC paper: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         // Convert API response to sections format - handle new structure with content object
         let apiSections = [];
-        
+
         if (data.content && typeof data.content === 'object') {
           // New structure: sections are inside a content object with section_title and htmlContent
           apiSections = Object.entries(data.content)
             .filter(([, value]) => typeof value === 'object' && value !== null)
             .map(([key, sectionData], index) => {
               const section = sectionData as { title?: string; htmlContent?: string };
-              
+
               // Try to extract a meaningful title
               let title = section.title;
-              
+
               // If no title, try to extract from HTML content
               if (!title && section.htmlContent) {
                 // Try to find the first heading in the HTML content
@@ -91,17 +114,17 @@ export default function DocumentEditorPage() {
                   title = headingMatch[1].replace(/<[^>]*>/g, '').trim();
                 }
               }
-              
+
               // If still no title, try to use the key as a fallback
               if (!title && key && key !== 'title' && key !== 'htmlContent') {
                 title = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
               }
-              
+
               // Final fallback
               if (!title) {
                 title = `Section ${index + 1}`;
               }
-              
+
               return {
                 id: `section-${index}`,
                 title: title,
@@ -118,33 +141,24 @@ export default function DocumentEditorPage() {
               content: content as string
             }));
         }
-        
+
         setSections(apiSections);
-        
+
         // Set active section to first section if available
         if (apiSections.length > 0) {
           setActiveSection(apiSections[0].id);
         }
-        
+
         // Update title with paper title if available
-        if (data.title) {
-          setTitleInput(data.title);
-        }
-        
-        // Set createdAt and author
-        if (data.createdAt) {
-          setCreatedAt(data.createdAt);
-        }
-        if (data.author) {
-          setAuthor(data.author);
-        }
-        if (data.updatedAt) {
-          setUpdatedAt(data.updatedAt);
-        }
-        if (data.status) {
-          setStatus(data.status);
-        }
-        
+        setTitleInput(data.title || "");
+        setCompanyName(data.companyName || "");
+        setCreatedAt(data.createdAt || "");
+        setAuthor(data.author || "");
+        setUpdatedAt(data.updatedAt || "");
+        setStatus(data.status || "");
+        setStructuringLeads(data.structuringLeads || "");
+        setProjectDetails(data.projectDetails || "");
+        setSponsors(data.sponsors || "");
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC paper';
         setError(errorMessage);
@@ -170,9 +184,66 @@ export default function DocumentEditorPage() {
   }, [editingSection, sections, activeSection]);
 
   // Handler for saving edited content
-  const handleSave = (id: string) => {
-    setSections(sections.map(s => s.id === id ? { ...s, content: editContent } : s));
-    setEditingSection(null);
+  const handleSave = async (id: string) => {
+    const section = sections.find(s => s.id === id);
+    console.log("section", section);
+    if (!section || !documentId) return;
+
+    try {
+      // Get the section key using the same function as regenerate
+      const getSectionKey = (sectionTitle: string) => {
+        switch (sectionTitle) {
+          case "Document Header & Summary Table":
+            return "summary_table";
+          case "Company & Project Overview":
+            return "company_overview";
+          case "Transaction Overview":
+            return "transaction_overview";
+          case "Market Overview":
+            return "market_overview";
+          case "Key Strengths & Value Proposition":
+            return "key_strengths";
+          case "Critical Areas for Due Diligence":
+            return "critical_areas";
+          case "Development Impact":
+            return "development_impact";
+          case "Initial Risk Assessment":
+            return "initial_risk_assessment";
+          case "Preliminary KYC Report":
+            return "preliminary_kyc_report";
+          default:
+            return sectionTitle;
+        }
+      };
+
+      const sectionKey = getSectionKey(section.title);
+
+      // Send PUT request to update the section
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}/section/${sectionKey}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: section.title,
+          htmlContent: editContent
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to update section: ${response.status}`);
+      }
+
+      // Update local state
+      setSections(sections.map(s => s.id === id ? { ...s, content: editContent } : s));
+      setEditingSection(null);
+
+      // Show success feedback
+      showNotification('Section updated successfully!');
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update section';
+      console.error('Error updating section:', err);
+      showNotification(`Error: ${errorMessage}`, 'error');
+    }
   };
 
   // Handler for downloading PDF with delay
@@ -181,12 +252,12 @@ export default function DocumentEditorPage() {
     console.log('Sections:', sections);
     console.log('Target ref:', targetRef);
     console.log('Title:', titleInput);
-    
+
     if (!sections || sections.length === 0) {
       alert('No content available to generate PDF. Please ensure the document has loaded properly.');
       return;
     }
-    
+
     // Add a small delay to ensure content is fully rendered
     setTimeout(() => {
       console.log('Generating PDF...');
@@ -194,11 +265,163 @@ export default function DocumentEditorPage() {
     }, 500);
   };
 
+  // Handler for submitting document for approval
+  const handleSubmitForApproval = async () => {
+    if (!documentId) return;
+
+    setIsSubmitting(true);
+    setSubmitStatus('Preparing submission...');
+
+    try {
+      // Simulate preparation step
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSubmitStatus('Submitting for approval...');
+
+      // Submit to API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}/submit`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'review',
+          submittedAt: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to submit document: ${response.status}`);
+      }
+
+      setSubmitStatus('Successfully submitted!');
+
+      // Update local status
+      setStatus('review');
+
+      // Show success message
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitStatus('');
+        showNotification('Document successfully submitted for approval!');
+      }, 2000);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit document';
+      setSubmitStatus('Submission failed');
+      console.error('Error submitting document:', err);
+
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitStatus('');
+        showNotification(`Error: ${errorMessage}`, 'error');
+      }, 2000);
+    }
+  };
+
+  // Handler for regenerating a section
+  const handleRegenerateSection = async (sectionTitle: string) => {
+    if (!documentId) return;
+
+    setRegeneratingSection(sectionTitle);
+    setRegenerateStatus('Regenerating section...');
+
+    try {
+      const getSectionKey = (sectionTitle: string) => {
+        switch (sectionTitle) {
+          case "Document Header & Summary Table":
+            return "summary_table";
+          case "Company & Project Overview":
+            return "company_overview";
+          case "Transaction Overview":
+            return "transaction_overview";
+          case "Market Overview":
+            return "market_overview";
+          case "Key Strengths & Value Proposition":
+            return "key_strengths";
+          case "Critical Areas for Due Diligence":
+            return "critical_areas";
+          case "Development Impact":
+            return "development_impact";
+          case "Initial Risk Assessment":
+            return "initial_risk_assessment";
+          case "Preliminary KYC Report":
+            return "preliminary_kyc_report";
+          default:
+            return sectionTitle;
+        }
+      }
+
+      // Prepare the NBC paper object without content
+      const nbcPaperWithoutContent = {
+        title: titleInput,
+        author: author,
+        status: status,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        companyName: companyName,
+        structuringLeads: structuringLeads,
+        projectDetails: projectDetails,
+        sponsors:sponsors,
+      };
+
+      console.log(getSectionKey(sectionTitle));
+      // Send regenerate request
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/regenerate/${documentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          section: getSectionKey(sectionTitle),
+          nbcPaper: nbcPaperWithoutContent
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to regenerate section: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data);
+      if (data.success && data.regeneratedSection) {
+        // Update the section content with the regenerated content
+        setSections(sections.map(s => {
+          console.log("s.title", s.title, "sectionTitle", sectionTitle);
+          return s.title === sectionTitle
+            ? { ...s, content: data.regeneratedSection[0].htmlContent }
+            : s
+        }));
+
+        setRegenerateStatus('Section regenerated successfully!');
+
+        // Show success message
+        setTimeout(() => {
+          setRegeneratingSection(null);
+          setRegenerateStatus('');
+          showNotification('Section regenerated successfully!');
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Failed to regenerate section');
+      }
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate section';
+      setRegenerateStatus('Regeneration failed');
+      console.error('Error regenerating section:', err);
+
+      setTimeout(() => {
+        setRegeneratingSection(null);
+        setRegenerateStatus('');
+        showNotification(`Error: ${errorMessage}`, 'error');
+      }, 2000);
+    }
+  };
+
   return (
-    <div className="h-screen overflow-y-hidden bg-[#fdf3f0]">
+    <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">DIGICRED</span>
+        <Link href="/">
+          <div className="flex items-center gap-2 mr-32">
+            <p className="text-2xl font-bold text-gray-800">DIGI<span className="text-orange-700">CRED</span></p>
+          </div>
+        </Link>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
           {[
             "Dashboard",
@@ -217,10 +440,9 @@ export default function DocumentEditorPage() {
                 <span className="absolute -left-3 w-1 h-1 rounded-full bg-orange-700" />
               )}
               <a
-                href={item === "Dashboard" ? "" : item.toLowerCase()}
-                className={`transition ${
-                  activeMenu === item ? "text-orange-700 font-semibold" : ""
-                }`}
+                href={item === "Dashboard" ? "/" : item.toLowerCase()}
+                className={`transition ${activeMenu === item ? "text-orange-700 font-semibold" : ""
+                  }`}
               >
                 {item}
               </a>
@@ -230,7 +452,7 @@ export default function DocumentEditorPage() {
         <div className="flex-1 flex justify-center">
           <input
             type="text"
-            placeholder="Search for a case number, patient ID or name..."
+            placeholder="Search for an NBC Paper by Name..."
             className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-600"
           />
         </div>
@@ -240,7 +462,7 @@ export default function DocumentEditorPage() {
         </div>
       </nav>
       <div className="h-px bg-gray-200 w-full" />
-      
+
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -250,15 +472,15 @@ export default function DocumentEditorPage() {
           </div>
         </div>
       )}
-      
+
       {/* Error State */}
       {error && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-2">Error</div>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
             >
               Try Again
@@ -266,7 +488,7 @@ export default function DocumentEditorPage() {
           </div>
         </div>
       )}
-      
+
       {/* Main Content - Only show when not loading and no error */}
       {!loading && !error && (
         <>
@@ -316,12 +538,11 @@ export default function DocumentEditorPage() {
                   <span>ID: {documentId}</span>
                   {author && <span>Author: {author}</span>}
                   {status && (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                      status === 'published' ? 'bg-green-100 text-green-800' :
-                      status === 'review' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                        status === 'published' ? 'bg-green-100 text-green-800' :
+                          status === 'review' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                      }`}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
                   )}
@@ -350,13 +571,12 @@ export default function DocumentEditorPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-auto">
-                <button 
+                <button
                   onClick={() => setPreviewMode(!previewMode)}
-                  className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${
-                    previewMode 
-                      ? 'bg-orange-600 text-white hover:bg-orange-700' 
+                  className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${previewMode
+                      ? 'bg-orange-600 text-white hover:bg-orange-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {previewMode ? (
                     <>
@@ -371,13 +591,30 @@ export default function DocumentEditorPage() {
                   )}
                 </button>
                 {previewMode && (
-                  <button 
+                  <button
                     onClick={handleDownloadPDF}
                     className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer"
                   >
                     <ArrowDownTrayIcon className="w-4 h-4" />
                     Download PDF
                   </button>
+                )}
+                {/* Submit for Approval Button - Only show for draft status */}
+                {status === 'draft' && !isSubmitting && (
+                  <button
+                    onClick={handleSubmitForApproval}
+                    className="bg-purple-600 text-white px-4 py-2 rounded font-semibold hover:bg-purple-700 transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <PaperAirplaneIcon className="w-4 h-4" />
+                    Submit for Approval
+                  </button>
+                )}
+                {/* Submit Status Display */}
+                {isSubmitting && (
+                  <div className="bg-purple-100 text-purple-700 px-4 py-2 rounded font-semibold flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    {submitStatus}
+                  </div>
                 )}
                 <button className="bg-green-500 text-white px-4 py-2 rounded font-semibold hover:bg-green-600 transition flex items-center gap-2 cursor-pointer">
                   <PlusIcon className="w-5 h-5" />
@@ -407,15 +644,31 @@ export default function DocumentEditorPage() {
                           <motion.li
                             key={section.id}
                             className={`relative cursor-pointer py-3 px-2 transition ${activeSection === section.id ? 'text-orange-600 font-semibold' : 'text-gray-700'}`}
-                            onClick={() => setActiveSection(section.id)}
+                            onClick={() => {
+                              setActiveSection(section.id);
+                              // Smooth scroll to section within the main content area
+                              const element = document.getElementById(`section-${section.id}`);
+                              const mainContent = document.querySelector('main');
+                              if (element && mainContent) {
+                                // Calculate the offset to account for navbar and header
+                                const navbarHeight = 80; // h-20 = 80px
+                                const headerHeight = 88; // Profile header height
+                                const totalOffset = navbarHeight + headerHeight;
+
+                                const elementTop = element.offsetTop;
+                                mainContent.scrollTo({
+                                  top: elementTop - totalOffset,
+                                  behavior: 'smooth'
+                                });
+                              }
+                            }}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ delay: idx * 0.07, duration: 0.4, type: "spring", stiffness: 60 }}
                             whileHover={{
                               scale: 1.03,
-                              backgroundColor: activeSection === section.id ? "#fff" : "#fff7f3",
-                              color: activeSection === section.id ? "#ea580c" : "#334155"
+                              color: "#ea580c"
                             }}
                           >
                             {section.title}
@@ -440,10 +693,10 @@ export default function DocumentEditorPage() {
               <div className={`${previewMode ? 'max-w-4xl mx-auto' : 'max-w-4xl mx-auto'} space-y-8`}>
                 {previewMode ? (
                   // Preview Mode - Show all sections as a single document
-                  <div 
-                    ref={targetRef} 
+                  <div
+                    ref={targetRef}
                     className="pdf-target max-w-4xl mx-auto bg-white p-8"
-                    style={{ 
+                    style={{
                       minHeight: '100vh',
                       position: 'relative',
                       zIndex: 1
@@ -457,12 +710,11 @@ export default function DocumentEditorPage() {
                         <span>ID: {documentId}</span>
                         {author && <span>Author: {author}</span>}
                         {status && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                            status === 'published' ? 'bg-green-100 text-green-800' :
-                            status === 'review' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                              status === 'published' ? 'bg-green-100 text-green-800' :
+                                status === 'review' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                            }`}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
                         )}
@@ -490,12 +742,13 @@ export default function DocumentEditorPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Document Content */}
                     <div className="space-y-8">
                       {sections.map((section, idx) => (
                         <motion.div
                           key={section.id}
+                          id={`section-${section.id}`}
                           initial={{ opacity: 0, y: 30 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.15, duration: 0.6, type: "spring", stiffness: 60 }}
@@ -507,15 +760,15 @@ export default function DocumentEditorPage() {
                               {section.title}
                             </h2>
                           </div>
-                          
+
                           {/* Section Content */}
                           <div className="prose prose-lg max-w-none">
-                            <div 
-                              className="text-gray-700 leading-relaxed text-base" 
-                              dangerouslySetInnerHTML={{ __html: section.content }} 
+                            <div
+                              className="text-gray-700 leading-relaxed text-base"
+                              dangerouslySetInnerHTML={{ __html: section.content }}
                             />
                           </div>
-                          
+
                           {/* Decorative element */}
                           {idx < sections.length - 1 && (
                             <div className="flex justify-center mt-8">
@@ -525,14 +778,14 @@ export default function DocumentEditorPage() {
                         </motion.div>
                       ))}
                     </div>
-                    
+
                     {/* Document Footer */}
                     <div className="mt-20 pt-8 border-t border-gray-200 text-center">
                       <div className="text-gray-500 text-sm">
-                        Generated on {new Date().toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        Generated on {new Date().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
                         })}
                       </div>
                     </div>
@@ -542,6 +795,7 @@ export default function DocumentEditorPage() {
                   sections.map((section, idx) => (
                     <motion.div
                       key={section.id}
+                      id={`section-${section.id}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       whileHover={{ scale: 1.025, boxShadow: "0 6px 32px 0 rgba(234, 88, 12, 0.10)" }}
@@ -551,23 +805,51 @@ export default function DocumentEditorPage() {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <div className="font-semibold text-gray-700 flex-1">{section.title}</div>
-                        {editingSection === section.id ? (
-                          <button
-                            className="editor-save flex items-center gap-1 px-3 py-1 text-sm cursor-pointer"
-                            onClick={e => { e.stopPropagation(); handleSave(section.id); }}
-                          >
-                            <CheckIcon className="w-5 h-5" /> Save
-                          </button>
-                        ) : (
-                          <motion.button
-                            className="text-gray-400 font-bold rounded p-1 cursor-pointer hover:text-orange-500"
-                            onClick={e => { e.stopPropagation(); setEditingSection(section.id); }}
-                            whileHover={{ scale: 1.15, color: "#f97316" }}
-                            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                          >
-                            <PencilSquareIcon className="w-5 h-5" />
-                          </motion.button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {regeneratingSection === section.title ? (
+                            <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
+                              <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                              {regenerateStatus}
+                            </div>
+                          ) : (
+                            <motion.button
+                              className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
+                              onClick={e => { e.stopPropagation(); handleRegenerateSection(section.title); }}
+                              whileHover={{ scale: 1.15, color: "#2563eb" }}
+                              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                              title="Regenerate section"
+                            >
+                              <ArrowPathIcon className="w-4 h-4" />
+                            </motion.button>
+                          )}
+                          {editingSection === section.id ? (
+                            <button
+                              className="editor-save flex items-center gap-1 px-3 py-1 text-sm cursor-pointer"
+                              onClick={e => { e.stopPropagation(); handleSave(section.id); }}
+                            >
+                              <CheckIcon className="w-5 h-5" /> Save
+                            </button>
+                          ) : (
+                            <motion.button
+                              className={`font-bold rounded p-1 transition ${
+                                regeneratingSection === section.id 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : 'text-gray-400 cursor-pointer hover:text-orange-500'
+                              }`}
+                              onClick={e => { 
+                                if (regeneratingSection !== section.id) {
+                                  e.stopPropagation(); 
+                                  setEditingSection(section.id); 
+                                }
+                              }}
+                              whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#f97316" } : {}}
+                              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                              disabled={regeneratingSection === section.id}
+                            >
+                              <PencilSquareIcon className={`${regeneratingSection === section.title ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-orange-500'} w-5 h-5`} />
+                            </motion.button>
+                          )}
+                        </div>
                       </div>
                       <AnimatePresence mode="wait" initial={false}>
                         {editingSection === section.id ? (
@@ -577,8 +859,19 @@ export default function DocumentEditorPage() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
+                            className="relative"
                           >
-                            <TiptapEditor content={editContent} onChange={setEditContent} />
+                            {regeneratingSection === section.title && (
+                              <div className="absolute inset-0 bg-gray-100 bg-opacity-50 z-10 flex items-center justify-center rounded-lg">
+                                <div className="flex items-center gap-2 text-blue-600">
+                                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                  <span className="text-sm font-medium">Regenerating...</span>
+                                </div>
+                              </div>
+                            )}
+                            <div className={regeneratingSection === section.id ? 'pointer-events-none opacity-50' : ''}>
+                              <TiptapEditor content={editContent} onChange={setEditContent} />
+                            </div>
                           </motion.div>
                         ) : (
                           <motion.div
@@ -600,7 +893,7 @@ export default function DocumentEditorPage() {
           </div>
         </>
       )}
-      
+
       <style jsx global>{`
         /* PDF Generation - Comprehensive color function overrides */
         .pdf-target,
@@ -925,6 +1218,48 @@ export default function DocumentEditorPage() {
           margin: 0.5em 0 !important;
         }
       `}</style>
+
+      {/* Notification Component */}
+      <AnimatePresence>
+        {notification && notification.visible && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg max-w-md mx-auto ${
+              notification.type === 'success' 
+                ? 'bg-green-500 text-white' 
+                : notification.type === 'error' 
+                ? 'bg-red-500 text-white' 
+                : 'bg-blue-500 text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {notification.type === 'success' && (
+                <CheckIcon className="w-5 h-5 flex-shrink-0" />
+              )}
+              {notification.type === 'error' && (
+                <div className="w-5 h-5 flex-shrink-0 rounded-full border-2 border-white flex items-center justify-center">
+                  <span className="text-xs font-bold">!</span>
+                </div>
+              )}
+              {notification.type === 'info' && (
+                <div className="w-5 h-5 flex-shrink-0 rounded-full border-2 border-white flex items-center justify-center">
+                  <span className="text-xs font-bold">i</span>
+                </div>
+              )}
+              <p className="text-sm font-medium">{notification.message}</p>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-auto text-white/80 hover:text-white transition-colors"
+              >
+                <div className="w-4 h-4">×</div>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+} 

@@ -3,7 +3,7 @@ import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon,
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Link from 'next/link';
 interface NBCPaper {
   _id: string;
   title: string;
@@ -93,7 +93,11 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#ffffff] flex flex-col">
       {/* Navbar from documents page */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">DIGICRED</span>
+        <Link href="/">
+          <div className="flex items-center gap-2 mr-32">
+            <p className="text-2xl font-bold text-gray-800">DIGI<span className="text-orange-700">CRED</span></p>
+          </div>
+        </Link>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
           {[
             "Dashboard",
@@ -112,7 +116,7 @@ export default function DashboardPage() {
                 <span className="absolute -left-3 w-1 h-1 rounded-full bg-orange-700" />
               )}
               <a
-                href={item === "Dashboard" ? "/dashboard" : "#"}
+                href={item === "Dashboard" ? "/" : item.toLowerCase()}
                 className={`transition ${
                   activeMenu === item ? "text-orange-700 font-semibold" : ""
                 }`}
@@ -125,7 +129,7 @@ export default function DashboardPage() {
         <div className="flex-1 flex justify-center">
           <input
             type="text"
-            placeholder="Search for a case number, patient ID or name..."
+            placeholder="Search for an NBC Paper by Name..."
             className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-600"
           />
         </div>
