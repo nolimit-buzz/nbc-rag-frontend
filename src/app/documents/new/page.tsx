@@ -176,10 +176,10 @@ export default function NewNBCPaper() {
       console.log(res);
       if (!res.ok) throw new Error('Failed to create NBC Paper');
       const data = await res.json();
-      if (data.success && data.nbcPaper && data.nbcPaper.insertedId) {
+      if (data.success && data.newNbcPaper && data.newNbcPaper.insertedId) {
         setCreationStatus('Redirecting to document...');
         await new Promise(resolve => setTimeout(resolve, 500));
-        router.push(`/documents/${data.nbcPaper.insertedId}`);
+        router.push(`/documents/${data.newNbcPaper.insertedId}`);
       } else {
         throw new Error('Invalid response format');
       }
