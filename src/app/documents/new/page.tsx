@@ -195,7 +195,7 @@ export default function NewNBCPaper() {
     <div className="h-screen overflow-y-hidden bg-[#fff] flex flex-col">
       {/* Navbar */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">CASEXP</span>
+        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">DIGICRED</span>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
           {["Dashboard", "Cases", "Planning", "Evaluations"].map((item) => (
             <div key={item} className="relative flex flex-row items-center cursor-pointer">

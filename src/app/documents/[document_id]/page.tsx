@@ -77,18 +77,44 @@ export default function DocumentEditorPage() {
           // New structure: sections are inside a content object with section_title and htmlContent
           apiSections = Object.entries(data.content)
             .filter(([, value]) => typeof value === 'object' && value !== null)
-            .map(([, sectionData], index) => ({
-              id: `section-${index}`,
-              title: (sectionData as { section_title?: string; htmlContent?: string }).section_title || `Section ${index + 1}`,
-              content: (sectionData as { section_title?: string; htmlContent?: string }).htmlContent || ''
-            }));
+            .map(([key, sectionData], index) => {
+              const section = sectionData as { title?: string; htmlContent?: string };
+              
+              // Try to extract a meaningful title
+              let title = section.title;
+              
+              // If no title, try to extract from HTML content
+              if (!title && section.htmlContent) {
+                // Try to find the first heading in the HTML content
+                const headingMatch = section.htmlContent.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/i);
+                if (headingMatch) {
+                  title = headingMatch[1].replace(/<[^>]*>/g, '').trim();
+                }
+              }
+              
+              // If still no title, try to use the key as a fallback
+              if (!title && key && key !== 'title' && key !== 'htmlContent') {
+                title = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              }
+              
+              // Final fallback
+              if (!title) {
+                title = `Section ${index + 1}`;
+              }
+              
+              return {
+                id: `section-${index}`,
+                title: title,
+                content: section.htmlContent || ''
+              };
+            });
         } else {
           // Fallback to old structure: sections are direct properties
           apiSections = Object.entries(data)
             .filter(([, value]) => typeof value === 'string')
             .map(([key, content], index) => ({
               id: `section-${index}`,
-              title: key,
+              title: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
               content: content as string
             }));
         }
@@ -172,7 +198,7 @@ export default function DocumentEditorPage() {
     <div className="h-screen overflow-y-hidden bg-[#fdf3f0]">
       {/* Navbar */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">CASEXP</span>
+        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">DIGICRED</span>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
           {[
             "Dashboard",

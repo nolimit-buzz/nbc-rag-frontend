@@ -93,7 +93,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#ffffff] flex flex-col">
       {/* Navbar from documents page */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">CASEXP</span>
+        <span className="text-orange-700 font-extrabold text-2xl tracking-tight mr-32">DIGICRED</span>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
           {[
             "Dashboard",
