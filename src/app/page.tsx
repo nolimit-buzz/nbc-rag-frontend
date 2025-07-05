@@ -1,10 +1,9 @@
 'use client';
 import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
-import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import Navbar from '@/components/Navbar';
 interface NBCPaper {
   _id: string;
   title: string;
@@ -28,7 +27,6 @@ const sidebarGroups = [
 ];
 
 export default function DashboardPage() {
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [nbcPapers, setNbcPapers] = useState<NBCPaper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,90 +60,17 @@ export default function DashboardPage() {
     fetchNbcPapers();
   }, []);
 
-  // Calculate statistics from real data
-  const stats = [
-    { 
-      name: 'Total NBC Papers', 
-      value: nbcPapers.length, 
-      icon: DocumentTextIcon, 
-      color: 'bg-[#48B85C] text-white' 
-    },
-    { 
-      name: 'Drafts', 
-      value: nbcPapers.filter(paper => paper.status === 'draft').length, 
-      icon: PencilSquareIcon, 
-      color: 'bg-[#1454D5] text-white' 
-    },
-    { 
-      name: 'Pending', 
-      value: nbcPapers.filter(paper => paper.status === 'review' || paper.status === 'pending').length, 
-      icon: ClockIcon, 
-      color: 'bg-[#F3873F] text-white' 
-    },
-    { 
-      name: 'Approved', 
-      value: nbcPapers.filter(paper => paper.status === 'published' || paper.status === 'approved').length, 
-      icon: CheckCircleIcon, 
-      color: 'bg-[#4E419F] text-white' 
-    },
-  ];
-
-  console.log(activeMenu);
+  
   return (
     <div className="min-h-screen overflow-y-hidden bg-[#ffffff] flex flex-col">
       {/* Navbar from documents page */}
-      <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
-        <Link href="/">
-          <div className="flex items-center gap-2 mr-32">
-            <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-28 h-auto" />
-          </div>
-        </Link>
-        <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
-          {[
-            "Dashboard",
-            "Cases",
-            "Planning",
-            "Evaluations"
-          ].map((item) => (
-            <motion.div
-              key={item}
-              className="relative flex items-center cursor-pointer"
-              onClick={() => setActiveMenu(item)}
-              whileHover={{ scale: 1.08, color: '#48B85C' }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            >
-              {activeMenu === item && (
-                <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
-              )}
-              <a
-                href={item === "Dashboard" ? "/" : item.toLowerCase()}
-                className={`transition ${
-                  activeMenu === item ? "text-[#48B85C] font-semibold" : ""
-                }`}
-              >
-                {item}
-              </a>
-            </motion.div>
-          ))}
-        </div>
-        <div className="flex-1 flex justify-center">
-          <input
-            type="text"
-            placeholder="Search for an NBC Paper by Name..."
-            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#48B85C]"
-          />
-        </div>
-        <div className="flex items-center gap-4 ml-8">
-          <span className="text-gray-500 text-sm">Chinua Azubuike</span>
-          <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">CA</div>
-        </div>
-      </nav>
+      <Navbar />
       <div className="h-px bg-gray-200 w-full" />
       <div className="flex flex-1">
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col py-8 px-4">
           <nav className="flex flex-col gap-2">
-            <div className="mb-6 text-xs text-gray-400 uppercase tracking-widest pl-2">Articles</div>
+            <div className="mb-6 text-xs text-gray-400 uppercase tracking-widest pl-2">Documents</div>
             {sidebarGroups.map((group) => (
               <button
                 key={group.name}
@@ -178,15 +103,44 @@ export default function DashboardPage() {
               New NBC Paper
             </button>
           </div>
-          {/* Statistics Cards */}
+          {/* Statistics Cards - Creative Content */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
-            {stats.map((stat) => (
-              <div key={stat.name} className={`rounded-xl p-6 flex flex-col items-center ${stat.color}`}>
-                <stat.icon className="w-8 h-8 mb-2 opacity-90" />
-                <div className="text-3xl font-extrabold">{stat.value}</div>
-                <div className="text-base font-semibold">{stat.name}</div>
+            {/* Total Papers */}
+            <div className="rounded-xl p-6" style={{background: 'rgba(69, 206, 227, 0.4)', border: '1px solid rgba(69, 206, 227, 0.4)'}}>
+              <div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(63, 195, 214, 0.4)'}}>All Papers</div>
+                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.length}</div>
+                <div className="text-lg font-semibold text-gray-800 mb-1">Every NBC paper in your pipeline</div>
+                <div className="text-gray-700 text-base mt-2">Track your progress from draft to approval</div>
               </div>
-            ))}
+            </div>
+            {/* Drafts */}
+            <div className="rounded-xl p-6" style={{background: 'rgba(106, 156, 220, 0.4)', border: '1px solid rgba(106, 156, 220, 0.4)'}}>
+              <div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(106, 156, 220, 0.4)'}}>Drafts in Progress</div>
+                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'draft').length}</div>
+                <div className="text-lg font-semibold text-gray-800 mb-1">Papers being written or edited</div>
+                <div className="text-gray-700 text-base mt-2">Keep refining your drafts for submission</div>
+              </div>
+            </div>
+            {/* Pending Review */}
+            <div className="rounded-xl p-6" style={{background: 'rgba(71, 186, 235, 0.4)', border: '1px solid rgba(71, 186, 235, 0.4)'}}>
+              <div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(63, 167, 209, 0.4)'}}>Awaiting Review</div>
+                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'review' || p.status === 'pending').length}</div>
+                <div className="text-lg font-semibold text-gray-800 mb-1">Papers submitted for review</div>
+                <div className="text-gray-700 text-base mt-2">Monitor feedback and approval status</div>
+              </div>
+            </div>
+            {/* Approved */}
+            <div className="rounded-xl p-6" style={{background: 'rgba(53, 222, 177, 0.4)', border: '1px solid rgba(53, 222, 177, 0.4)'}}>
+              <div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(47, 202, 161, 0.4)'}}>Approved Papers</div>
+                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'published' || p.status === 'approved').length}</div>
+                <div className="text-lg font-semibold text-gray-800 mb-1">Papers ready for next steps</div>
+                <div className="text-gray-700 text-base mt-2">Congratulations! These are ready to go</div>
+              </div>
+            </div>
           </div>
           
           {/* Loading State */}
@@ -252,11 +206,11 @@ export default function DashboardPage() {
                       <div className="flex items-start justify-between mb-2">
                         {/* Status badge */}
                         <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                          paper.status === 'draft' ? 'bg-blue-100 text-blue-700' :
+                          paper.status === 'draft' ? '' :
                           paper.status === 'published' || paper.status === 'approved' ? 'bg-green-100 text-green-700' :
                           paper.status === 'review' || paper.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-gray-100 text-gray-700'
-                        }`}>
+                        }`} style={paper.status === 'draft' ? {background: 'rgba(106, 156, 220, 0.4)', color: '#23406c'} : {}}>
                           {paper.status ? paper.status.charAt(0).toUpperCase() + paper.status.slice(1) : 'Unknown'}
                         </span>
                         {/* Three-dot menu */}
