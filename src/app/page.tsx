@@ -92,7 +92,7 @@ export default function DashboardPage() {
         <main className="flex-1 p-10 h-[calc(100vh-100px)] overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-1">Generate NBC Papers</h1>
+              <h1 className="text-3xl font-bold text-gray-700 mb-1">Generate NBC Papers</h1>
               <p className="text-gray-500">Fill the information below to start generating NBC papers for your business.</p>
             </div>
             <button
@@ -108,37 +108,37 @@ export default function DashboardPage() {
             {/* Total Papers */}
             <div className="rounded-xl p-6" style={{background: 'rgba(69, 206, 227, 0.4)', border: '1px solid rgba(69, 206, 227, 0.4)'}}>
               <div>
-                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(63, 195, 214, 0.4)'}}>All Papers</div>
-                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.length}</div>
-                <div className="text-lg font-semibold text-gray-800 mb-1">Every NBC paper in your pipeline</div>
-                <div className="text-gray-700 text-base mt-2">Track your progress from draft to approval</div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-700/80" style={{background: 'rgba(63, 195, 214, 0.4)'}}>All Papers</div>
+                <div className="text-4xl font-extrabold text-gray-700 mb-2">{nbcPapers.length}</div>
+                <div className="text-[14px] font-semibold text-gray-700 mb-1">Every NBC paper in your pipeline</div>
+                <div className="text-[14px] text-gray-700 text-base mt-2">Track your progress from draft to approval</div>
               </div>
             </div>
             {/* Drafts */}
             <div className="rounded-xl p-6" style={{background: 'rgba(106, 156, 220, 0.4)', border: '1px solid rgba(106, 156, 220, 0.4)'}}>
               <div>
-                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(106, 156, 220, 0.4)'}}>Drafts in Progress</div>
-                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'draft').length}</div>
-                <div className="text-lg font-semibold text-gray-800 mb-1">Papers being written or edited</div>
-                <div className="text-gray-700 text-base mt-2">Keep refining your drafts for submission</div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-700/80" style={{background: 'rgba(106, 156, 220, 0.4)'}}>Drafts in Progress</div>
+                <div className="text-4xl font-extrabold text-gray-700 mb-2">{nbcPapers.filter(p => p.status === 'draft').length}</div>
+                <div className="text-[14px] font-semibold text-gray-700 mb-1">Papers being written or edited</div>
+                <div className="text-[14px] text-gray-700 text-base mt-2">Keep refining your drafts for submission</div>
               </div>
             </div>
             {/* Pending Review */}
             <div className="rounded-xl p-6" style={{background: 'rgba(71, 186, 235, 0.4)', border: '1px solid rgba(71, 186, 235, 0.4)'}}>
               <div>
-                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(63, 167, 209, 0.4)'}}>Awaiting Review</div>
-                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'review' || p.status === 'pending').length}</div>
-                <div className="text-lg font-semibold text-gray-800 mb-1">Papers submitted for review</div>
-                <div className="text-gray-700 text-base mt-2">Monitor feedback and approval status</div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-700/80" style={{background: 'rgba(63, 167, 209, 0.4)'}}>Awaiting Review</div>
+                <div className="text-4xl font-extrabold text-gray-700 mb-2">{nbcPapers.filter(p => p.status === 'review' || p.status === 'pending').length}</div>
+                <div className="text-[14px] font-semibold text-gray-700 mb-1">Papers submitted for review</div>
+                <div className="text-[14px] text-gray-700 text-base mt-2">Monitor feedback and approval status</div>
               </div>
             </div>
             {/* Approved */}
             <div className="rounded-xl p-6" style={{background: 'rgba(53, 222, 177, 0.4)', border: '1px solid rgba(53, 222, 177, 0.4)'}}>
               <div>
-                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-800/80" style={{background: 'rgba(47, 202, 161, 0.4)'}}>Approved Papers</div>
-                <div className="text-4xl font-extrabold text-gray-800 mb-2">{nbcPapers.filter(p => p.status === 'published' || p.status === 'approved').length}</div>
-                <div className="text-lg font-semibold text-gray-800 mb-1">Papers ready for next steps</div>
-                <div className="text-gray-700 text-base mt-2">Congratulations! These are ready to go</div>
+                <div className="inline-block mb-4 px-4 py-1 rounded-full text-sm font-medium text-gray-700/80" style={{background: 'rgba(47, 202, 161, 0.4)'}}>Approved Papers</div>
+                <div className="text-4xl font-extrabold text-gray-700 mb-2">{nbcPapers.filter(p => p.status === 'published' || p.status === 'approved').length}</div>
+                <div className="text-[14px] font-semibold text-gray-700 mb-1">Papers ready for next steps</div>
+                <div className="text-[14px] text-gray-700 text-base mt-2">Congratulations! These are ready to go</div>
               </div>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
               {nbcPapers.length === 0 ? (
                 <div className="text-center py-12">
                   <DocumentTextIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No NBC Papers Found</h3>
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No NBC Papers Found</h3>
                   <p className="text-gray-500 mb-4">Get started by creating your first NBC paper.</p>
                   <button
                     onClick={() => router.push('/documents/new')}
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                         </button>
                       </div>
                       {/* Title */}
-                      <div className="font-semibold text-lg text-gray-800 mb-1 line-clamp-2">
+                      <div className="font-semibold text-lg text-gray-700 mb-1 line-clamp-2">
                         {paper.title || 'Untitled Paper'}
                       </div>
                       {/* Description/subtitle */}

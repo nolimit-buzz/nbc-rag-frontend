@@ -49,7 +49,7 @@ export default function Navbar() {
         />
       </div>
       <div className="flex items-center gap-4 ml-8">
-        <span className="text-gray-500 text-sm">C. Azubuike</span>
+        <span className="text-gray-700 text-sm">C. Azubuike</span>
         <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">CA</div>
       </div>
     </nav>
