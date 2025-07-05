@@ -14,10 +14,10 @@ const menuItems = [
 export default function Navbar() {
     const [activeMenu, setActiveMenu] = useState('Dashboard');
   return (
-    <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
+    <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center px-8">
       <Link href="/">
         <div className="flex items-center gap-2 mr-32">
-          <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-28 h-auto" />
+          <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-40 h-auto" />
         </div>
       </Link>
       <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
