@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import Link from "next/link";
-
+import Image from "next/image";
 interface FormData {
   companyName: string;
   dealName: string;
@@ -198,7 +198,7 @@ export default function NewNBCPaper() {
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
         <Link href="/">
           <div className="flex items-center gap-2 mr-32">
-            <p className="text-2xl font-bold text-gray-800">DIGI<span className="text-orange-700">CRED</span></p>
+            <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-28 h-auto" />
           </div>
         </Link>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
@@ -206,12 +206,12 @@ export default function NewNBCPaper() {
             <div key={item} className="relative flex flex-row items-center cursor-pointer">
               <a
                 href={item === "Dashboard" ? "/" : item.toLowerCase()}
-                className={`transition ${item === 'Dashboard' ? 'text-orange-700 font-semibold' : ''}`}
+                className={`transition ${item === 'Dashboard' ? 'text-[#48B85C] font-semibold' : ''}`}
               >
                 {item}
               </a>
               {item === 'Dashboard' && (
-                <span className="ml-2 w-2 h-2 rounded-full bg-orange-700 inline-block align-middle" />
+                <span className="ml-2 w-2 h-2 rounded-full bg-[#48B85C] inline-block align-middle" />
               )}
             </div>
           ))}
@@ -220,12 +220,12 @@ export default function NewNBCPaper() {
           <input
             type="text"
             placeholder="Search for an NBC Paper by Name..."
-            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-600"
+            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#48B85C]"
           />
         </div>
         <div className="flex items-center gap-4 ml-8">
           <span className="text-gray-500 text-sm">Dr. Jefferson</span>
-          <div className="w-9 h-9 rounded-full bg-orange-700 flex items-center justify-center text-lg font-extrabold text-white">SC</div>
+          <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">SC</div>
         </div>
       </nav>
       <div className="h-px bg-gray-200 w-full" />
@@ -237,7 +237,7 @@ export default function NewNBCPaper() {
             {sidebarGroups.map((group) => (
               <button
                 key={group.name}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium hover:bg-orange-50 transition text-gray-700`}
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition text-gray-700`}
               >
                 <group.icon className="w-5 h-5" />
                 {group.name}
@@ -245,7 +245,7 @@ export default function NewNBCPaper() {
             ))}
           </nav>
           <div className="mt-auto pt-8">
-            <button className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-orange-700 transition">
+            <button className="w-full bg-[#48B85C] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3da050] transition">
               <PlusIcon className="w-5 h-5" />
               New NBC Paper
             </button>
@@ -274,8 +274,8 @@ export default function NewNBCPaper() {
               <ol className="space-y-8 w-full">
                 {steps.map((s, idx) => (
                   <li key={s.label} className="flex items-center gap-4">
-                    <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 ${step === idx ? 'border-orange-600 bg-orange-50 text-orange-600 font-bold' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>{idx + 1}</div>
-                    <span className={`text-base ${step === idx ? 'text-orange-700 font-semibold' : 'text-gray-400'}`}>{s.label}</span>
+                    <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 ${step === idx ? 'border-[#48B85C] bg-green-50 text-[#48B85C] font-bold' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>{idx + 1}</div>
+                    <span className={`text-base ${step === idx ? 'text-[#48B85C] font-semibold' : 'text-gray-400'}`}>{s.label}</span>
                   </li>
                 ))}
               </ol>
@@ -293,10 +293,10 @@ export default function NewNBCPaper() {
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="relative">
                     {/* Main loading spinner */}
-                    <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-6"></div>
+                    <div className="w-16 h-16 border-4 border-green-200 border-t-[#48B85C] rounded-full animate-spin mb-6"></div>
                     
                     {/* Pulsing background circle */}
-                    <div className="absolute inset-0 w-16 h-16 bg-orange-100 rounded-full animate-pulse opacity-50"></div>
+                    <div className="absolute inset-0 w-16 h-16 bg-green-100 rounded-full animate-pulse opacity-50"></div>
                   </div>
                   
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">Creating NBC Paper</h3>
@@ -305,75 +305,75 @@ export default function NewNBCPaper() {
                   {/* Progress steps */}
                   <div className="w-full max-w-md space-y-4">
                     <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-500 ${
-                      creationStatus.includes('Retrieving') ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                      creationStatus.includes('Retrieving') ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                     }`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                        creationStatus.includes('Retrieving') ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'
+                        creationStatus.includes('Retrieving') ? 'bg-[#48B85C] text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
                         {creationStatus.includes('Retrieving') ? '✓' : '1'}
                       </div>
                       <span className={`font-medium ${
-                        creationStatus.includes('Retrieving') ? 'text-orange-700' : 'text-gray-500'
+                        creationStatus.includes('Retrieving') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
                         Retrieving relevant data
                       </span>
                     </div>
                     
                     <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-500 ${
-                      creationStatus.includes('Generating') ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                      creationStatus.includes('Generating') ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                     }`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                        creationStatus.includes('Generating') ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'
+                        creationStatus.includes('Generating') ? 'bg-[#48B85C] text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
                         {creationStatus.includes('Generating') ? '✓' : '2'}
                       </div>
                       <span className={`font-medium ${
-                        creationStatus.includes('Generating') ? 'text-orange-700' : 'text-gray-500'
+                        creationStatus.includes('Generating') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
                         Generating the NBC paper
                       </span>
                     </div>
                     
                     <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-500 ${
-                      creationStatus.includes('finishing') ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                      creationStatus.includes('finishing') ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                     }`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                        creationStatus.includes('finishing') ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'
+                        creationStatus.includes('finishing') ? 'bg-[#48B85C] text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
                         {creationStatus.includes('finishing') ? '✓' : '3'}
                       </div>
                       <span className={`font-medium ${
-                        creationStatus.includes('finishing') ? 'text-orange-700' : 'text-gray-500'
+                        creationStatus.includes('finishing') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
                         Applying finishing touches
                       </span>
                     </div>
                     
                     <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-500 ${
-                      creationStatus.includes('Saving') ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                      creationStatus.includes('Saving') ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                     }`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                        creationStatus.includes('Saving') ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'
+                        creationStatus.includes('Saving') ? 'bg-[#48B85C] text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
                         {creationStatus.includes('Saving') ? '✓' : '4'}
                       </div>
                       <span className={`font-medium ${
-                        creationStatus.includes('Saving') ? 'text-orange-700' : 'text-gray-500'
+                        creationStatus.includes('Saving') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
                         Saving to database
                       </span>
                     </div>
                     
                     <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-500 ${
-                      creationStatus.includes('Redirecting') ? 'bg-orange-50 border border-orange-200' : 'bg-gray-50'
+                      creationStatus.includes('Redirecting') ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
                     }`}>
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
-                        creationStatus.includes('Redirecting') ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'
+                        creationStatus.includes('Redirecting') ? 'bg-[#48B85C] text-white' : 'bg-gray-300 text-gray-600'
                       }`}>
                         {creationStatus.includes('Redirecting') ? '✓' : '5'}
                       </div>
                       <span className={`font-medium ${
-                        creationStatus.includes('Redirecting') ? 'text-orange-700' : 'text-gray-500'
+                        creationStatus.includes('Redirecting') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
                         Redirecting to document
                       </span>
@@ -392,12 +392,12 @@ export default function NewNBCPaper() {
                       <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">1. Basic Information</h2>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Company Name</label>
-                        <input name="companyName" value={form.companyName} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                        <input name="companyName" value={form.companyName} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                         {errors.companyName && <div className="text-red-500 text-sm mt-1">{errors.companyName}</div>}
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Transaction Type</label>
-                        <input name="transactionType" value={form.transactionType} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                        <input name="transactionType" value={form.transactionType} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                         {errors.transactionType && <div className="text-red-500 text-sm mt-1">{errors.transactionType}</div>}
                       </div>
                       <div>
@@ -405,7 +405,7 @@ export default function NewNBCPaper() {
                         <div className="flex flex-col gap-2 mb-2">
                           {form.structuringLeads.map((lead, idx) => (
                             <div key={idx} className="flex gap-2 items-center">
-                              <input value={lead} onChange={e => handleArrayChange('structuringLeads', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                              <input value={lead} onChange={e => handleArrayChange('structuringLeads', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                               <button
                                 type="button"
                                 className="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
@@ -434,7 +434,7 @@ export default function NewNBCPaper() {
                         <div className="flex flex-col gap-2 mb-2">
                           {form.sponsors.map((sponsor, idx) => (
                             <div key={idx} className="flex gap-2 items-center">
-                              <input value={sponsor} onChange={e => handleArrayChange('sponsors', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                              <input value={sponsor} onChange={e => handleArrayChange('sponsors', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                               <button
                                 type="button"
                                 className="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
@@ -465,7 +465,7 @@ export default function NewNBCPaper() {
                       <h2 className="text-2xl font-extrabold text-gray-800 mb-6 pb-2 border-b border-gray-200">2. Project Details</h2>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Location</label>
-                        <input name="location" value={form.projectDetails.location} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                        <input name="location" value={form.projectDetails.location} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                         {errors.location && <div className="text-red-500 text-sm mt-1">{errors.location}</div>}
                       </div>
                       <div>
@@ -474,7 +474,7 @@ export default function NewNBCPaper() {
                           name="sdgGoal"
                           value={form.projectDetails.sdgGoal}
                           onChange={handleProjectDetailsChange}
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800"
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
                         >
                           <option value="">Select SDG Goal</option>
                           <option value="No Poverty">1. No Poverty</option>
@@ -499,12 +499,12 @@ export default function NewNBCPaper() {
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Tenor</label>
-                        <input name="tenor" value={form.projectDetails.tenor} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                        <input name="tenor" value={form.projectDetails.tenor} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                         {errors.tenor && <div className="text-red-500 text-sm mt-1">{errors.tenor}</div>}
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Debt Need</label>
-                        <input name="debtNeed" value={form.projectDetails.debtNeed} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-gray-700 text-gray-800" />
+                        <input name="debtNeed" value={form.projectDetails.debtNeed} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
                         {errors.debtNeed && <div className="text-red-500 text-sm mt-1">{errors.debtNeed}</div>}
                       </div>
                     </div>
@@ -515,12 +515,12 @@ export default function NewNBCPaper() {
                   <div className="flex justify-between mt-8 gap-4">
                     <button type="button" onClick={handleBack} disabled={step === 0 || isCreating} className="px-6 py-2 rounded-lg border border-gray-300 text-gray-500 bg-white font-medium disabled:opacity-50 cursor-pointer">Back</button>
                     {step < steps.length - 1 ? (
-                      <button type="button" onClick={handleNext} disabled={isCreating} className="px-6 py-2 rounded-lg bg-orange-600 text-white font-medium hover:bg-orange-700 transition cursor-pointer disabled:opacity-50">Next Step</button>
+                      <button type="button" onClick={handleNext} disabled={isCreating} className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition cursor-pointer disabled:opacity-50">Next Step</button>
                     ) : (
                       <button 
                         type="submit" 
                         disabled={isCreating}
-                        className="px-6 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                        className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                       >
                         {isCreating ? (
                           <>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 interface NBCPaper {
   _id: string;
   title: string;
@@ -47,7 +48,7 @@ export default function DashboardPage() {
         }
         
         const data = await response.json();
-        setNbcPapers(data.papers || data || []);
+        setNbcPapers(data.papers || data.reverse() || []);
         
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';
@@ -67,35 +68,36 @@ export default function DashboardPage() {
       name: 'Total NBC Papers', 
       value: nbcPapers.length, 
       icon: DocumentTextIcon, 
-      color: 'bg-orange-100 text-orange-700' 
+      color: 'bg-[#48B85C] text-white' 
     },
     { 
       name: 'Drafts', 
       value: nbcPapers.filter(paper => paper.status === 'draft').length, 
       icon: PencilSquareIcon, 
-      color: 'bg-blue-100 text-blue-700' 
+      color: 'bg-[#1454D5] text-white' 
     },
     { 
       name: 'Pending', 
       value: nbcPapers.filter(paper => paper.status === 'review' || paper.status === 'pending').length, 
       icon: ClockIcon, 
-      color: 'bg-violet-600 text-white' 
+      color: 'bg-[#F3873F] text-white' 
     },
     { 
       name: 'Approved', 
       value: nbcPapers.filter(paper => paper.status === 'published' || paper.status === 'approved').length, 
       icon: CheckCircleIcon, 
-      color: 'bg-green-100 text-green-700' 
+      color: 'bg-[#4E419F] text-white' 
     },
   ];
 
+  console.log(activeMenu);
   return (
-    <div className="min-h-screen bg-[#ffffff] flex flex-col">
+    <div className="min-h-screen overflow-y-hidden bg-[#ffffff] flex flex-col">
       {/* Navbar from documents page */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
         <Link href="/">
           <div className="flex items-center gap-2 mr-32">
-            <p className="text-2xl font-bold text-gray-800">DIGI<span className="text-orange-700">CRED</span></p>
+            <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-28 h-auto" />
           </div>
         </Link>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
@@ -109,16 +111,16 @@ export default function DashboardPage() {
               key={item}
               className="relative flex items-center cursor-pointer"
               onClick={() => setActiveMenu(item)}
-              whileHover={{ scale: 1.08, color: '#ea580c' }}
+              whileHover={{ scale: 1.08, color: '#48B85C' }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
               {activeMenu === item && (
-                <span className="absolute -left-3 w-1 h-1 rounded-full bg-orange-700" />
+                <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
               )}
               <a
                 href={item === "Dashboard" ? "/" : item.toLowerCase()}
                 className={`transition ${
-                  activeMenu === item ? "text-orange-700 font-semibold" : ""
+                  activeMenu === item ? "text-[#48B85C] font-semibold" : ""
                 }`}
               >
                 {item}
@@ -130,12 +132,12 @@ export default function DashboardPage() {
           <input
             type="text"
             placeholder="Search for an NBC Paper by Name..."
-            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-600"
+            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#48B85C]"
           />
         </div>
         <div className="flex items-center gap-4 ml-8">
-          <span className="text-gray-500 text-sm">Dr. Jefferson</span>
-          <div className="w-9 h-9 rounded-full bg-orange-700 flex items-center justify-center text-lg font-extrabold text-white">SC</div>
+          <span className="text-gray-500 text-sm">Chinua Azubuike</span>
+          <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">CA</div>
         </div>
       </nav>
       <div className="h-px bg-gray-200 w-full" />
@@ -147,7 +149,7 @@ export default function DashboardPage() {
             {sidebarGroups.map((group) => (
               <button
                 key={group.name}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium hover:bg-orange-50 transition text-gray-700`}
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium hover:bg-[#48B85C]/10 transition text-gray-700`}
               >
                 <group.icon className="w-5 h-5" />
                 {group.name}
@@ -155,21 +157,21 @@ export default function DashboardPage() {
             ))}
           </nav>
           <div className="mt-auto pt-8">
-            <button className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-orange-700 transition">
+            <button className="w-full bg-[#48B85C] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3da050] transition">
               <PlusIcon className="w-5 h-5" />
               New NBC Paper
             </button>
           </div>
         </aside>
         {/* Main Content */}
-        <main className="flex-1 p-10">
+        <main className="flex-1 p-10 h-[calc(100vh-100px)] overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-1">Generate NBC Papers</h1>
               <p className="text-gray-500">Fill the information below to start generating NBC papers for your business.</p>
             </div>
             <button
-              className="border border-orange-600 text-orange-600 bg-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-orange-600 hover:text-white transition text-lg cursor-pointer"
+              className="border border-[#48B85C] text-[#48B85C] bg-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-[#48B85C] hover:text-white transition text-lg cursor-pointer"
               onClick={() => router.push('/documents/new')}
             >
               <PlusIcon className="w-6 h-6" />
@@ -179,13 +181,7 @@ export default function DashboardPage() {
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
             {stats.map((stat) => (
-              <div key={stat.name} className={`rounded-xl p-6 flex flex-col items-center ${
-                stat.name === 'Total NBC Papers' ? 'bg-orange-500 text-white' :
-                stat.name === 'Drafts' ? 'bg-blue-600 text-white' :
-                stat.name === 'Pending' ? 'bg-green-600 text-white' :
-                stat.name === 'Approved' ? 'bg-violet-600 text-white' :
-                'bg-gray-500 text-white'
-              }`}>
+              <div key={stat.name} className={`rounded-xl p-6 flex flex-col items-center ${stat.color}`}>
                 <stat.icon className="w-8 h-8 mb-2 opacity-90" />
                 <div className="text-3xl font-extrabold">{stat.value}</div>
                 <div className="text-base font-semibold">{stat.name}</div>
@@ -197,7 +193,7 @@ export default function DashboardPage() {
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#48B85C] mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading NBC Papers...</p>
               </div>
             </div>
@@ -211,7 +207,7 @@ export default function DashboardPage() {
                 <p className="text-gray-600 mb-4">{error}</p>
                 <button 
                   onClick={() => window.location.reload()} 
-                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                  className="bg-[#48B85C] text-white px-4 py-2 rounded-lg hover:bg-[#3da050] transition"
                 >
                   Try Again
                 </button>
@@ -222,7 +218,17 @@ export default function DashboardPage() {
           {/* NBC Papers Cards */}
           {!loading && !error && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-700 mb-4">Recent NBC Papers</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-700">Recent NBC Papers</h2>
+                {nbcPapers.length > 6 && (
+                  <Link 
+                    href="/archive" 
+                    className="text-[#48B85C] hover:text-[#3da050] font-medium text-sm transition-colors"
+                  >
+                    View All Papers →
+                  </Link>
+                )}
+              </div>
               {nbcPapers.length === 0 ? (
                 <div className="text-center py-12">
                   <DocumentTextIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -230,14 +236,14 @@ export default function DashboardPage() {
                   <p className="text-gray-500 mb-4">Get started by creating your first NBC paper.</p>
                   <button
                     onClick={() => router.push('/documents/new')}
-                    className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+                    className="bg-[#48B85C] text-white px-4 py-2 rounded-lg hover:bg-[#3da050] transition"
                   >
                     Create First Paper
                   </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {nbcPapers.slice(0, 9).map((paper, idx) => (
+                  {nbcPapers.slice(0, 6).map((paper, idx) => (
                     <div 
                       key={paper._id || idx} 
                       className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 min-h-[180px] hover:shadow-lg transition-shadow cursor-pointer"

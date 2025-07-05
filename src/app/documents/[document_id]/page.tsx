@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePDF } from 'react-to-pdf';
 import Link from "next/dist/client/link";
-
+import Image from "next/image";
 interface Section {
   id: string;
   title: string;
@@ -22,7 +22,7 @@ export default function DocumentEditorPage() {
 
   const [sections, setSections] = useState<Section[]>([]);
   const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<string>('');
+  const [activeSection, setActiveSection] = useState<string>('section-0');
   const [editContent, setEditContent] = useState<string>("");
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [editingTitle, setEditingTitle] = useState(false);
@@ -48,6 +48,9 @@ export default function DocumentEditorPage() {
   // Regenerate state
   const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
   const [regenerateStatus, setRegenerateStatus] = useState<string>('');
+
+  // Menu dropdown state
+  const [showMenu, setShowMenu] = useState(false);
 
   // Notification state
   const [notification, setNotification] = useState<{
@@ -412,14 +415,13 @@ export default function DocumentEditorPage() {
       }, 2000);
     }
   };
-
   return (
     <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
       <nav className="top-0 left-0 right-0 z-30 h-20 bg-gray-50 shadow-sm flex items-center px-8">
         <Link href="/">
           <div className="flex items-center gap-2 mr-32">
-            <p className="text-2xl font-bold text-gray-800">DIGI<span className="text-orange-700">CRED</span></p>
+            <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-28 h-auto" />
           </div>
         </Link>
         <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
@@ -433,16 +435,16 @@ export default function DocumentEditorPage() {
               key={item}
               className="relative flex items-center cursor-pointer"
               onClick={() => setActiveMenu(item)}
-              whileHover={{ scale: 1.08, color: '#ea580c' }}
+              whileHover={{ scale: 1.08, color: '#48B85C' }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
               {activeMenu === item && (
-                <span className="absolute -left-3 w-1 h-1 rounded-full bg-orange-700" />
+                <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
               )}
               <a
                 href={item === "Dashboard" ? "/" : item.toLowerCase()}
-                className={`transition ${activeMenu === item ? "text-orange-700 font-semibold" : ""
-                  }`}
+                className={`transition ${activeMenu === item ? "text-[#48B85C] font-semibold" : ""
+                }`}
               >
                 {item}
               </a>
@@ -453,12 +455,12 @@ export default function DocumentEditorPage() {
           <input
             type="text"
             placeholder="Search for an NBC Paper by Name..."
-            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-600"
+            className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#48B85C]"
           />
         </div>
         <div className="flex items-center gap-4 ml-8">
           <span className="text-gray-500 text-sm">Dr. Jefferson</span>
-          <div className="w-9 h-9 rounded-full bg-orange-700 flex items-center justify-center text-lg font-extrabold text-white">SC</div>
+          <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">SC</div>
         </div>
       </nav>
       <div className="h-px bg-gray-200 w-full" />
@@ -467,7 +469,7 @@ export default function DocumentEditorPage() {
       {loading && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#48B85C] mx-auto mb-4"></div>
             <p className="text-gray-600">Loading NBC Paper...</p>
           </div>
         </div>
@@ -481,7 +483,7 @@ export default function DocumentEditorPage() {
             <p className="text-gray-600 mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition"
+              className="bg-[#48B85C] text-white px-4 py-2 rounded-lg hover:bg-[#3da050] transition"
             >
               Try Again
             </button>
@@ -495,13 +497,13 @@ export default function DocumentEditorPage() {
           {/* Profile Header - spans full width */}
           <div>
             <div className="w-full  overflow-y-auto flex items-center gap-4 bg-white p-6">
-              <div className="w-12 h-12 rounded-full bg-orange-700 flex items-center justify-center text-2xl font-extrabold text-white">NB</div>
+              <div className="w-12 h-12 rounded-full bg-[#48B85C] flex items-center justify-center text-2xl font-extrabold text-white">NB</div>
               <div>
                 <div className="flex items-center gap-2">
                   {editingTitle ? (
                     <>
                       <input
-                        className="text-lg font-semibold text-gray-800 border-b border-orange-300 focus:outline-none bg-transparent px-1 min-w-[500px] w-auto"
+                        className="text-lg font-semibold text-gray-800 border-b border-[#48B85C] focus:outline-none bg-transparent px-1 min-w-[500px] w-auto"
                         style={{ maxWidth: 400 }}
                         value={titleInput}
                         autoFocus
@@ -516,7 +518,7 @@ export default function DocumentEditorPage() {
                         }}
                       />
                       <button
-                        className="text-gray-400 hover:text-orange-500 cursor-pointer"
+                        className="text-gray-400 hover:text-[#48B85C] cursor-pointer"
                         onMouseDown={e => { e.preventDefault(); setEditingTitle(false); }}
                       >
                         <CheckIcon className="w-5 h-5 cursor-pointer" />
@@ -526,7 +528,7 @@ export default function DocumentEditorPage() {
                     <>
                       <span className="text-lg font-semibold text-gray-800">{titleInput}</span>
                       <button
-                        className="text-gray-400 hover:text-orange-500"
+                        className="text-gray-400 hover:text-[#48B85C]"
                         onClick={() => { setEditingTitle(true); setTitleInput(titleInput); }}
                       >
                         <PencilSquareIcon className="w-5 h-5 cursor-pointer" />
@@ -538,7 +540,7 @@ export default function DocumentEditorPage() {
                   <span>ID: {documentId}</span>
                   {author && <span>Author: {author}</span>}
                   {status && (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
                         status === 'published' ? 'bg-green-100 text-green-800' :
                           status === 'review' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
@@ -574,7 +576,7 @@ export default function DocumentEditorPage() {
                 <button
                   onClick={() => setPreviewMode(!previewMode)}
                   className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${previewMode
-                      ? 'bg-orange-600 text-white hover:bg-orange-700'
+                      ? 'bg-[#48B85C] text-white hover:bg-[#3da050]'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
@@ -599,31 +601,99 @@ export default function DocumentEditorPage() {
                     Download PDF
                   </button>
                 )}
-                {/* Submit for Approval Button - Only show for draft status */}
-                {status === 'draft' && !isSubmitting && (
+                {/* Menu Button */}
+                <div className="relative z-[9999]">
                   <button
-                    onClick={handleSubmitForApproval}
-                    className="bg-purple-600 text-white px-4 py-2 rounded font-semibold hover:bg-purple-700 transition flex items-center gap-2 cursor-pointer"
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    <PaperAirplaneIcon className="w-4 h-4" />
-                    Submit for Approval
+                    <EllipsisVerticalIcon className="w-5 h-5 text-gray-600" />
                   </button>
-                )}
-                {/* Submit Status Display */}
-                {isSubmitting && (
-                  <div className="bg-purple-100 text-purple-700 px-4 py-2 rounded font-semibold flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                    {submitStatus}
-                  </div>
-                )}
-                <button className="bg-green-500 text-white px-4 py-2 rounded font-semibold hover:bg-green-600 transition flex items-center gap-2 cursor-pointer">
-                  <PlusIcon className="w-5 h-5" />
-                  New NBC Paper
-                </button>
+                </div>
               </div>
             </div>
             <div className="h-px bg-gray-200 w-full" />
           </div>
+          
+          {/* Dropdown Menu - Fixed positioning outside any container */}
+          <AnimatePresence>
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="fixed top-40 right-8 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
+              >
+                {/* Submit for Approval Option */}
+                {status === 'draft' && !isSubmitting && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleSubmitForApproval();
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  >
+                    <PaperAirplaneIcon className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Submit for Approval</div>
+                      <div className="text-sm text-gray-500">Send document for review</div>
+                    </div>
+                  </button>
+                )}
+                
+                {/* Submit Status Display */}
+                {isSubmitting && (
+                  <div className="px-4 py-3 flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div>
+                      <div className="font-medium text-gray-900">Submitting...</div>
+                      <div className="text-sm text-gray-500">{submitStatus}</div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Download PDF Option */}
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    handleDownloadPDF();
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
+                  <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Download as PDF</div>
+                    <div className="text-sm text-gray-500">Export document as PDF</div>
+                  </div>
+                </button>
+                
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-2"></div>
+                
+                {/* New NBC Paper Option */}
+                <Link
+                  href="/documents/new"
+                  className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
+                  <PlusIcon className="w-5 h-5 text-[#48B85C]" />
+                  <div>
+                    <div className="font-medium text-gray-900">New NBC Paper</div>
+                    <div className="text-sm text-gray-500">Create a new document</div>
+                  </div>
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Close dropdown when clicking outside */}
+          {showMenu && (
+            <div 
+              className="fixed inset-0 z-[9998]" 
+              onClick={() => setShowMenu(false)}
+            />
+          )}
+          
           <div className="flex">
             {/* Sidebar - Hidden in preview mode */}
             {!previewMode && (
@@ -643,7 +713,7 @@ export default function DocumentEditorPage() {
                         {sections.map((section, idx) => (
                           <motion.li
                             key={section.id}
-                            className={`relative cursor-pointer py-3 px-2 transition ${activeSection === section.id ? 'text-orange-600 font-semibold' : 'text-gray-700'}`}
+                            className={`relative cursor-pointer py-3 px-2 transition ${activeSection === section.id ? 'text-[#48B85C] font-semibold' : 'text-gray-700'}`}
                             onClick={() => {
                               setActiveSection(section.id);
                               // Smooth scroll to section within the main content area
@@ -668,18 +738,10 @@ export default function DocumentEditorPage() {
                             transition={{ delay: idx * 0.07, duration: 0.4, type: "spring", stiffness: 60 }}
                             whileHover={{
                               scale: 1.03,
-                              color: "#ea580c"
+                              color: "#48B85C"
                             }}
                           >
                             {section.title}
-                            {activeSection === section.id && (
-                              <motion.span
-                                layoutId="sidebar-active"
-                                className="absolute left-0 top-0 h-full w-1 bg-orange rounded"
-                                style={{ zIndex: 1 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                              />
-                            )}
                           </motion.li>
                         ))}
                       </ul>
@@ -689,7 +751,7 @@ export default function DocumentEditorPage() {
               </motion.aside>
             )}
             {/* Main Content */}
-            <main className={`${previewMode ? 'flex-1' : 'flex-1'} p-12 bg-white h-[calc(100vh-10rem)] overflow-y-auto`}>
+            <main className={`${previewMode ? 'flex-1' : 'flex-1'} p-12 bg-white h-[calc(100vh-168px)] overflow-y-auto`}>
               <div className={`${previewMode ? 'max-w-4xl mx-auto' : 'max-w-4xl mx-auto'} space-y-8`}>
                 {previewMode ? (
                   // Preview Mode - Show all sections as a single document
@@ -710,7 +772,7 @@ export default function DocumentEditorPage() {
                         <span>ID: {documentId}</span>
                         {author && <span>Author: {author}</span>}
                         {status && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
                               status === 'published' ? 'bg-green-100 text-green-800' :
                                 status === 'review' ? 'bg-blue-100 text-blue-800' :
                                   'bg-gray-100 text-gray-800'
@@ -762,12 +824,7 @@ export default function DocumentEditorPage() {
                           </div>
 
                           {/* Section Content */}
-                          <div className="prose prose-lg max-w-none">
-                            <div
-                              className="text-gray-700 leading-relaxed text-base"
-                              dangerouslySetInnerHTML={{ __html: section.content }}
-                            />
-                          </div>
+                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
 
                           {/* Decorative element */}
                           {idx < sections.length - 1 && (
@@ -798,7 +855,7 @@ export default function DocumentEditorPage() {
                       id={`section-${section.id}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ scale: 1.025, boxShadow: "0 6px 32px 0 rgba(234, 88, 12, 0.10)" }}
+                      whileHover={{ scale: 1.025, boxShadow: "0 6px 32px 0 rgba(72, 184, 92, 0.10)" }}
                       transition={{ delay: idx * 0.07, duration: 0.4, type: "spring", stiffness: 60 }}
                       className='bg-gray-50 p-6 mb-4 rounded-xl flex flex-col gap-2 border border-gray-200 transition-all duration-200'
                       onClick={() => setActiveSection(section.id)}
@@ -834,7 +891,7 @@ export default function DocumentEditorPage() {
                               className={`font-bold rounded p-1 transition ${
                                 regeneratingSection === section.id 
                                   ? 'text-gray-300 cursor-not-allowed' 
-                                  : 'text-gray-400 cursor-pointer hover:text-orange-500'
+                                  : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'
                               }`}
                               onClick={e => { 
                                 if (regeneratingSection !== section.id) {
@@ -842,11 +899,11 @@ export default function DocumentEditorPage() {
                                   setEditingSection(section.id); 
                                 }
                               }}
-                              whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#f97316" } : {}}
+                              whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#48B85C" } : {}}
                               transition={{ type: "spring", stiffness: 400, damping: 20 }}
                               disabled={regeneratingSection === section.id}
                             >
-                              <PencilSquareIcon className={`${regeneratingSection === section.title ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-orange-500'} w-5 h-5`} />
+                              <PencilSquareIcon className={`${regeneratingSection === section.title ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'} w-5 h-5`} />
                             </motion.button>
                           )}
                         </div>
@@ -881,7 +938,7 @@ export default function DocumentEditorPage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
+                            <div className="text-gray-700 text-sm prose max-w-none prose-p:my-2" dangerouslySetInnerHTML={{ __html: section.content }} />
                           </motion.div>
                         )}
                       </AnimatePresence>
