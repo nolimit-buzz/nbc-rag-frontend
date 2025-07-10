@@ -1,16 +1,23 @@
 'use client'
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePDF } from 'react-to-pdf';
 import Link from "next/dist/client/link";
 import Navbar from '@/components/Navbar';
+import { useRouter } from 'next/navigation';
 interface Section {
   id: string;
   title: string;
   content: string;
+  subsections?: Subsection[];
+}
+
+interface Subsection {
+  title: string;
+  htmlContent: string;
 }
 
 // Dynamic import for TiptapEditor with correct props
@@ -18,12 +25,17 @@ const TiptapEditor = dynamic(() => import('@/components/TiptapEditor'), { ssr: f
 
 export default function DocumentEditorPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const documentId = params.document_id as string;
+  const documentType = searchParams.get('type');
 
   const [sections, setSections] = useState<Section[]>([]);
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingSubsection, setEditingSubsection] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>('section-0');
   const [editContent, setEditContent] = useState<string>("");
+  const [editSubsectionContent, setEditSubsectionContent] = useState<string>("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("NBC Paper");
   const [companyName, setCompanyName] = useState("");
@@ -37,6 +49,9 @@ export default function DocumentEditorPage() {
   const [status, setStatus] = useState<string>('');
   const [projectDetails, setProjectDetails] = useState<string>('');
   const [sponsors, setSponsors] = useState<string>('');
+  const [countryName, setCountryName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [year, setYear] = useState<string>('');
   // Preview mode state
   const [previewMode, setPreviewMode] = useState(false);
 
@@ -46,10 +61,14 @@ export default function DocumentEditorPage() {
 
   // Regenerate state
   const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
+  const [regeneratingSubsection, setRegeneratingSubsection] = useState<string | null>(null);
   const [regenerateStatus, setRegenerateStatus] = useState<string>('');
 
   // Menu dropdown state
   const [showMenu, setShowMenu] = useState(false);
+
+  // Collapsed sections state
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
   // Notification state
   const [notification, setNotification] = useState<{
@@ -77,6 +96,29 @@ export default function DocumentEditorPage() {
     }, 4000);
   };
 
+  // Helper to handle 401 Unauthorized
+  function handleUnauthorized(res: Response) {
+    if (res.status === 401) {
+      localStorage.clear();
+      router.push('/');
+      return true;
+    }
+    return false;
+  }
+
+  // Toggle section collapse
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
   // Fetch NBC paper data
   useEffect(() => {
     console.log(documentId);
@@ -87,10 +129,24 @@ export default function DocumentEditorPage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}`);
+        const accessToken = localStorage.getItem('accessToken');
+
+        // Determine the API endpoint based on document type
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+        const endpoint = documentType === 'market'
+          ? `${baseUrl}/market-reports/${documentId}`
+          : `${baseUrl}/nbc-papers/${documentId}`;
+
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        });
+
+        if (handleUnauthorized(response)) return;
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch NBC paper: ${response.status}`);
+          throw new Error(`Failed to fetch document: ${response.status}`);
         }
 
         const data = await response.json();
@@ -98,52 +154,18 @@ export default function DocumentEditorPage() {
         // Convert API response to sections format - handle new structure with content object
         let apiSections = [];
 
-        if (data.content && typeof data.content === 'object') {
-          // New structure: sections are inside a content object with section_title and htmlContent
-          apiSections = Object.entries(data.content)
-            .filter(([, value]) => typeof value === 'object' && value !== null)
-            .map(([key, sectionData], index) => {
-              const section = sectionData as { title?: string; htmlContent?: string };
-
-              // Try to extract a meaningful title
-              let title = section.title;
-
-              // If no title, try to extract from HTML content
-              if (!title && section.htmlContent) {
-                // Try to find the first heading in the HTML content
-                const headingMatch = section.htmlContent.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/i);
-                if (headingMatch) {
-                  title = headingMatch[1].replace(/<[^>]*>/g, '').trim();
-                }
-              }
-
-              // If still no title, try to use the key as a fallback
-              if (!title && key && key !== 'title' && key !== 'htmlContent') {
-                title = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-              }
-
-              // Final fallback
-              if (!title) {
-                title = `Section ${index + 1}`;
-              }
-
-              return {
-                id: `section-${index}`,
-                title: title,
-                content: section.htmlContent || ''
-              };
-            });
-        } else {
-          // Fallback to old structure: sections are direct properties
-          apiSections = Object.entries(data)
-            .filter(([, value]) => typeof value === 'string')
-            .map(([key, content], index) => ({
+        apiSections = data.content
+          .map((section: { title?: string; htmlContent?: string; subsections?: any[] }, index: number) => {
+            return {
               id: `section-${index}`,
-              title: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-              content: content as string
-            }));
-        }
-
+              title: section.title,
+              content: section.htmlContent,
+              subsections: section.subsections ? section.subsections.map((sub: any) => ({
+                title: sub.title,
+                htmlContent: sub.htmlContent
+              })) : undefined
+            };
+          });
         setSections(apiSections);
 
         // Set active section to first section if available
@@ -161,6 +183,9 @@ export default function DocumentEditorPage() {
         setStructuringLeads(data.structuringLeads || "");
         setProjectDetails(data.projectDetails || "");
         setSponsors(data.sponsors || "");
+        setCountryName(data.countryName || "");
+        setDescription(data.description || "");
+        setYear(data.year || "");
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC paper';
         setError(errorMessage);
@@ -171,7 +196,7 @@ export default function DocumentEditorPage() {
     };
 
     fetchNbcPaper();
-  }, [documentId]);
+  }, [documentId, documentType,handleUnauthorized]);
 
   // When entering edit mode, set editContent to the section's content
   useEffect(() => {
@@ -195,6 +220,7 @@ export default function DocumentEditorPage() {
       // Get the section key using the same function as regenerate
       const getSectionKey = (sectionTitle: string) => {
         switch (sectionTitle) {
+          // NBC Paper sections
           case "Document Header & Summary Table":
             return "summary_table";
           case "Company & Project Overview":
@@ -213,6 +239,35 @@ export default function DocumentEditorPage() {
             return "initial_risk_assessment";
           case "Preliminary KYC Report":
             return "preliminary_kyc_report";
+          // Market Report sections
+          case "Summary Statistics":
+            return "summary_statistics";
+          case "Overview of Financial System":
+            return "overview_financial_system";
+          case "Bank and Non-Bank Financial Sector":
+            return "bank_non_bank_financial_sector";
+          case "Capital Market":
+            return "capital_market";
+          case "Fixed Income Markets":
+            return "fixed_income_markets";
+          case "Government Securities":
+            return "government_securities";
+          case "Non-Central Government Issuance":
+            return "non_central_government_issuance";
+          case "Secondary Market":
+            return "secondary_market";
+          case "Foreign Exchange":
+            return "foreign_exchange";
+          case "Derivatives":
+            return "derivatives";
+          case "Participation of Foreign Investors and Issuers":
+            return "participation_foreign_investors_issuers";
+          case "Clearing and Settlement":
+            return "clearing_settlement";
+          case "Investment Taxation":
+            return "investment_taxation";
+          case "Key Contacts":
+            return "key_contacts";
           default:
             return sectionTitle;
         }
@@ -220,15 +275,24 @@ export default function DocumentEditorPage() {
 
       const sectionKey = getSectionKey(section.title);
 
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}/sections/${sectionKey}`
+        : `${baseUrl}/nbc-papers/${documentId}/sections/${sectionKey}`;
+        const accessToken = localStorage.getItem('accessToken');
+
       // Send PUT request to update the section
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}/section/${sectionKey}`, {
+      const response = await fetch(endpoint, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({
           title: section.title,
           htmlContent: editContent
         })
       });
+
+      if (handleUnauthorized(response)) return;
 
       if (!response.ok) {
         throw new Error(`Failed to update section: ${response.status}`);
@@ -244,6 +308,97 @@ export default function DocumentEditorPage() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update section';
       console.error('Error updating section:', err);
+      showNotification(`Error: ${errorMessage}`, 'error');
+    }
+  };
+
+  // Handler for saving subsection content
+  const handleSaveSubsection = async (sectionId: string, subsectionIndex: number) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (!section || !documentId) return;
+
+    const subsection = section.subsections?.[subsectionIndex];
+    if (!subsection) return;
+
+    try {
+      const getSectionKey = (sectionTitle: string) => {
+        switch (sectionTitle) {
+          case "Snapshot":
+            return "summary_statistics";
+          case "Overview of Financial System":
+            return "overview_of_financial_system";
+          case "Bank and Non-Bank Financial Sector":
+            return "bank_non_bank_financial_sector";
+          case "Capital Market":
+            return "capital_market";
+          case "Fixed Income Markets":
+            return "fixed_income_markets";
+          case "Government Securities":
+            return "government_securities";
+          case "Non-Central Government Issuance":
+            return "non_central_government_issuance";
+          case "Secondary Market":
+            return "secondary_market";
+          case "Foreign Exchange":
+            return "foreign_exchange";
+          case "Derivatives":
+            return "derivatives";
+          case "Participation of Foreign Investors and Issuers":
+            return "participation_foreign_investors_issuers";
+          case "Clearing and Settlement":
+            return "clearing_settlement";
+          case "Investment Taxation":
+            return "investment_taxation";
+          case "Key Contacts":
+            return "key_contacts";
+          default:
+            return sectionTitle;
+        }
+      };
+
+      const sectionKey = getSectionKey(section.title);
+      const subsectionKey = getSectionKey(subsection.title);
+
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}/sections/${sectionKey}/subsections/${subsectionKey}`
+        : `${baseUrl}/nbc-papers/${documentId}/sections/${sectionKey}/subsections/${subsectionKey}`;
+      const accessToken = localStorage.getItem('accessToken');
+      // Send PUT request to update the subsection
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          title: subsection.title,
+          htmlContent: editSubsectionContent
+        })
+      });
+
+      if (handleUnauthorized(response)) return;
+
+      if (!response.ok) {
+        throw new Error(`Failed to update subsection: ${response.status}`);
+      }
+
+      // Update local state
+      setSections(sections.map(s => {
+        if (s.id === sectionId) {
+          const updatedSubsections = s.subsections?.map((sub, idx) =>
+            idx === subsectionIndex ? { ...sub, htmlContent: editSubsectionContent } : sub
+          );
+          return { ...s, subsections: updatedSubsections };
+        }
+        return s;
+      }));
+      setEditingSubsection(null);
+
+      // Show success feedback
+      showNotification('Subsection updated successfully!');
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update subsection';
+      console.error('Error updating subsection:', err);
       showNotification(`Error: ${errorMessage}`, 'error');
     }
   };
@@ -279,15 +434,23 @@ export default function DocumentEditorPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setSubmitStatus('Submitting for approval...');
 
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}/submit`
+        : `${baseUrl}/nbc-papers/${documentId}/submit`;
+      const accessToken = localStorage.getItem('accessToken');
       // Submit to API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/${documentId}/submit`, {
+      const response = await fetch(endpoint, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({
           status: 'review',
           submittedAt: new Date().toISOString()
         })
       });
+
+      if (handleUnauthorized(response)) return;
 
       if (!response.ok) {
         throw new Error(`Failed to submit document: ${response.status}`);
@@ -361,19 +524,36 @@ export default function DocumentEditorPage() {
         companyName: companyName,
         structuringLeads: structuringLeads,
         projectDetails: projectDetails,
-        sponsors:sponsors,
+        sponsors: sponsors,
       };
-
+      const marketPaperWithoutContent = {
+        title: titleInput,
+        author: author,
+        status: status,
+        country: countryName,
+        year: year,
+        description: description,
+      };
       console.log(getSectionKey(sectionTitle));
+
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}/regenerate/`
+        : `${baseUrl}/nbc-papers/${documentId}/regenerate`;
+        const accessToken = localStorage.getItem('accessToken');
+
       // Send regenerate request
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/regenerate/${documentId}`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({
-          section: getSectionKey(sectionTitle),
-          nbcPaper: nbcPaperWithoutContent
+          sectionKey: getSectionKey(sectionTitle),
+          [`${documentType}Paper`]: documentType === 'market' ? marketPaperWithoutContent : nbcPaperWithoutContent
         })
       });
+
+      if (handleUnauthorized(response)) return;
 
       if (!response.ok) {
         throw new Error(`Failed to regenerate section: ${response.status}`);
@@ -386,7 +566,7 @@ export default function DocumentEditorPage() {
         setSections(sections.map(s => {
           console.log("s.title", s.title, "sectionTitle", sectionTitle);
           return s.title === sectionTitle
-            ? { ...s, content: data.regeneratedSection[0].htmlContent }
+            ? { ...s, content: data.regeneratedSection.htmlContent}
             : s
         }));
 
@@ -414,10 +594,163 @@ export default function DocumentEditorPage() {
       }, 2000);
     }
   };
+
+  // Handler for regenerating a subsection
+  const handleRegenerateSubsection = async (sectionTitle: string, subsectionTitle: string) => {
+    if (!documentId) return;
+
+    setRegeneratingSubsection(`${sectionTitle}-${subsectionTitle}`);
+    setRegenerateStatus('Regenerating subsection...');
+
+    try {
+      const getSectionKey = (sectionTitle: string) => {
+        switch (sectionTitle) {
+          // NBC Paper sections
+          case "Document Header & Summary Table":
+            return "summary_table";
+          case "Company & Project Overview":
+            return "company_overview";
+          case "Transaction Overview":
+            return "transaction_overview";
+          case "Market Overview":
+            return "market_overview";
+          case "Key Strengths & Value Proposition":
+            return "key_strengths";
+          case "Critical Areas for Due Diligence":
+            return "critical_areas";
+          case "Development Impact":
+            return "development_impact";
+          case "Initial Risk Assessment":
+            return "initial_risk_assessment";
+          case "Preliminary KYC Report":
+            return "preliminary_kyc_report";
+          // Market Report sections
+          case "Summary Statistics":
+            return "summary_statistics";
+          case "Overview of Financial System":
+            return "overview_financial_system";
+          case "Bank and Non-Bank Financial Sector":
+            return "bank_non_bank_financial_sector";
+          case "Capital Market":
+            return "capital_market";
+          case "Fixed Income Markets":
+            return "fixed_income_markets";
+          case "Government Securities":
+            return "government_securities";
+          case "Non-Central Government Issuance":
+            return "non_central_government_issuance";
+          case "Secondary Market":
+            return "secondary_market";
+          case "Foreign Exchange":
+            return "foreign_exchange";
+          case "Derivatives":
+            return "derivatives";
+          case "Participation of Foreign Investors and Issuers":
+            return "participation_foreign_investors_issuers";
+          case "Clearing and Settlement":
+            return "clearing_settlement";
+          case "Investment Taxation":
+            return "investment_taxation";
+          case "Key Contacts":
+            return "key_contacts";
+          default:
+            return sectionTitle;
+        }
+      }
+
+      // Prepare the paper object without content
+      const nbcPaperWithoutContent = {
+        title: titleInput,
+        author: author,
+        status: status,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        companyName: companyName,
+        structuringLeads: structuringLeads,
+        projectDetails: projectDetails,
+        sponsors: sponsors,
+      };
+      const marketPaperWithoutContent = {
+        title: titleInput,
+        author: author,
+        status: status,
+        country: countryName,
+        year: year,
+        description: description,
+      };
+
+      const sectionKey = getSectionKey(sectionTitle);
+      const subsectionKey = getSectionKey(subsectionTitle);
+
+      console.log(`Regenerating subsection: ${sectionKey}/${subsectionKey}`);
+      
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}/regenerateSubsection`
+        : `${baseUrl}/nbc-papers/${documentId}/regenerateSubsection`;
+      const accessToken = localStorage.getItem('accessToken');
+      // Send regenerate request
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          sectionKey: sectionKey,
+          subsectionKey: subsectionKey,
+          [`${documentType}Paper`]: documentType === 'market' ? marketPaperWithoutContent : nbcPaperWithoutContent
+        })
+      });
+
+      if (handleUnauthorized(response)) return;
+
+      if (!response.ok) {
+        throw new Error(`Failed to regenerate subsection: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data);
+      if (data.success && data.regeneratedSubsection) {
+        // Update the subsection content with the regenerated content
+        setSections(sections.map(s => {
+          if (s.title === sectionTitle && s.subsections) {
+            const updatedSubsections = s.subsections.map(sub =>
+              sub.title === subsectionTitle
+                ? { ...sub, htmlContent: data.regeneratedSubsection.htmlContent }
+                : sub
+            );
+            return { ...s, subsections: updatedSubsections };
+          }
+          return s;
+        }));
+
+        setRegenerateStatus('Subsection regenerated successfully!');
+
+        // Show success message
+        setTimeout(() => {
+          setRegeneratingSubsection(null);
+          setRegenerateStatus('');
+          showNotification('Subsection regenerated successfully!');
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Failed to regenerate subsection');
+      }
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate subsection';
+      setRegenerateStatus('Regeneration failed');
+      console.error('Error regenerating subsection:', err);
+
+      setTimeout(() => {
+        setRegeneratingSubsection(null);
+        setRegenerateStatus('');
+        showNotification(`Error: ${errorMessage}`, 'error');
+      }, 2000);
+    }
+  };
   return (
     <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
-    <Navbar />
+      <Navbar />
       <div className="h-px bg-gray-200 w-full" />
 
       {/* Loading State */}
@@ -496,9 +829,9 @@ export default function DocumentEditorPage() {
                   {author && <span>Author: {author}</span>}
                   {status && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                        status === 'published' ? 'bg-green-100 text-green-800' :
-                          status === 'review' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                      status === 'published' ? 'bg-green-100 text-green-800' :
+                        status === 'review' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
                       }`}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
@@ -531,8 +864,8 @@ export default function DocumentEditorPage() {
                 <button
                   onClick={() => setPreviewMode(!previewMode)}
                   className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${previewMode
-                      ? 'bg-[#48B85C] text-white hover:bg-[#3da050]'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#48B85C] text-white hover:bg-[#3da050]'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   {previewMode ? (
@@ -569,7 +902,7 @@ export default function DocumentEditorPage() {
             </div>
             <div className="h-px bg-gray-200 w-full" />
           </div>
-          
+
           {/* Dropdown Menu - Fixed positioning outside any container */}
           <AnimatePresence>
             {showMenu && (
@@ -596,7 +929,7 @@ export default function DocumentEditorPage() {
                     </div>
                   </button>
                 )}
-                
+
                 {/* Submit Status Display */}
                 {isSubmitting && (
                   <div className="px-4 py-3 flex items-center gap-3">
@@ -607,7 +940,7 @@ export default function DocumentEditorPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Download PDF Option */}
                 <button
                   onClick={() => {
@@ -622,10 +955,10 @@ export default function DocumentEditorPage() {
                     <div className="text-sm text-gray-500">Export document as PDF</div>
                   </div>
                 </button>
-                
+
                 {/* Divider */}
                 <div className="border-t border-gray-200 my-2"></div>
-                
+
                 {/* New NBC Paper Option */}
                 <Link
                   href="/documents/new"
@@ -640,15 +973,15 @@ export default function DocumentEditorPage() {
               </motion.div>
             )}
           </AnimatePresence>
-          
+
           {/* Close dropdown when clicking outside */}
           {showMenu && (
-            <div 
-              className="fixed inset-0 z-[9998]" 
+            <div
+              className="fixed inset-0 z-[9998]"
               onClick={() => setShowMenu(false)}
             />
           )}
-          
+
           <div className="flex">
             {/* Sidebar - Hidden in preview mode */}
             {!previewMode && (
@@ -677,7 +1010,7 @@ export default function DocumentEditorPage() {
                               if (element && mainContent) {
                                 // Calculate the offset to account for navbar and header
                                 const navbarHeight = 80; // h-20 = 80px
-                                const headerHeight = 88; // Profile header height
+                                const headerHeight = 130; // Profile header height
                                 const totalOffset = navbarHeight + headerHeight;
 
                                 const elementTop = element.offsetTop;
@@ -696,7 +1029,72 @@ export default function DocumentEditorPage() {
                               color: "#48B85C"
                             }}
                           >
-                            {section.title}
+                            <div className="flex items-center justify-between">
+                              <span>{section.title}</span>
+                              {section.subsections && section.subsections.length > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSectionCollapse(section.id);
+                                  }}
+                                  className="ml-2 p-1 hover:bg-gray-100 rounded transition-transform duration-200"
+                                >
+                                  <svg
+                                    className={`w-4 h-4 transition-transform duration-200 ${collapsedSections.has(section.id) ? 'rotate-0' : 'rotate-90'}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Subsections */}
+                            {section.subsections && section.subsections.length > 0 && (
+                              <motion.div
+                                initial={false}
+                                animate={{
+                                  height: collapsedSections.has(section.id) ? 0 : 'auto',
+                                  opacity: collapsedSections.has(section.id) ? 0 : 1
+                                }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <ul className="mt-2 space-y-1 pl-4 border-l-1 border-gray-200">
+                                  {section.subsections.map((subsection, subIdx) => (
+                                    <motion.li
+                                      key={`${section.id}-sub-${subIdx}`}
+                                      className={`py-2 px-3 text-xs transition ${activeSection === `${section.id}-sub-${subIdx}` ? 'text-[#48B85C] font-medium' : 'text-gray-500'}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveSection(`${section.id}-sub-${subIdx}`);
+                                        // Smooth scroll to subsection
+                                        const element = document.getElementById(`subsection-${section.id}-sub-${subIdx}`);
+                                        const mainContent = document.querySelector('main');
+                                        if (element && mainContent) {
+                                          const navbarHeight = 80;
+                                          const headerHeight = 130;
+                                          const totalOffset = navbarHeight + headerHeight;
+                                          const elementTop = element.offsetTop;
+                                          mainContent.scrollTo({
+                                            top: elementTop - totalOffset,
+                                            behavior: 'smooth'
+                                          });
+                                        }
+                                      }}
+                                      whileHover={{
+                                        scale: 1.02,
+                                        color: "#48B85C"
+                                      }}
+                                    >
+                                      {subsection.title}
+                                    </motion.li>
+                                  ))}
+                                </ul>
+                              </motion.div>
+                            )}
                           </motion.li>
                         ))}
                       </ul>
@@ -728,9 +1126,9 @@ export default function DocumentEditorPage() {
                         {author && <span>Author: {author}</span>}
                         {status && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                              status === 'published' ? 'bg-green-100 text-green-800' :
-                                status === 'review' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
+                            status === 'published' ? 'bg-green-100 text-green-800' :
+                              status === 'review' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
                             }`}>
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
@@ -780,6 +1178,27 @@ export default function DocumentEditorPage() {
 
                           {/* Section Content */}
                           <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
+
+                          {/* Subsections */}
+                          {section.subsections && section.subsections.length > 0 && (
+                            <div className="mt-6 space-y-4">
+                              {section.subsections.map((subsection, subIdx) => (
+                                <motion.div
+                                  key={`${section.id}-sub-${subIdx}`}
+                                  id={`subsection-${section.id}-sub-${subIdx}`}
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
+                                  className="ml-6 pl-6 border-l-1 border-gray-300 bg-gray-50 rounded-r-lg p-4"
+                                >
+                                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                                    {subsection.title}
+                                  </h3>
+                                  <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                </motion.div>
+                              ))}
+                            </div>
+                          )}
 
                           {/* Decorative element */}
                           {idx < sections.length - 1 && (
@@ -843,15 +1262,16 @@ export default function DocumentEditorPage() {
                             </button>
                           ) : (
                             <motion.button
-                              className={`font-bold rounded p-1 transition ${
-                                regeneratingSection === section.id 
-                                  ? 'text-gray-300 cursor-not-allowed' 
-                                  : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'
-                              }`}
-                              onClick={e => { 
+                              className={`font-bold rounded p-1 transition ${regeneratingSection === section.id
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'
+                                }`}
+                              onClick={e => {
                                 if (regeneratingSection !== section.id) {
-                                  e.stopPropagation(); 
-                                  setEditingSection(section.id); 
+                                  e.stopPropagation();
+                                  // Clear any existing edit states before setting new one
+                                  setEditingSection(section.id);
+                                  setEditingSubsection(null);
                                 }
                               }}
                               whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#48B85C" } : {}}
@@ -897,6 +1317,94 @@ export default function DocumentEditorPage() {
                           </motion.div>
                         )}
                       </AnimatePresence>
+
+                      {/* Subsections in Edit Mode */}
+                      {section.subsections && section.subsections.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          {section.subsections.map((subsection, subIdx) => (
+                            <motion.div
+                              key={`${section.id}-sub-${subIdx}`}
+                              id={`subsection-${section.id}-sub-${subIdx}`}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: (idx * 0.07) + (subIdx * 0.05), duration: 0.3 }}
+                              className="ml-4 pl-4 border-l-1 border-gray-300 bg-gray-50 rounded-r-lg p-3"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="text-sm font-semibold text-gray-700 flex-1">
+                                  {subsection.title}
+                                </h4>
+                                <div className="flex items-center gap-1">
+                                  {regeneratingSubsection === `${section.title}-${subsection.title}` ? (
+                                    <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
+                                      <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                      {regenerateStatus}
+                                    </div>
+                                  ) : (
+                                    <motion.button
+                                      className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
+                                      onClick={e => { e.stopPropagation(); handleRegenerateSubsection(section.title, subsection.title); }}
+                                      whileHover={{ scale: 1.15, color: "#2563eb" }}
+                                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                      title="Regenerate subsection"
+                                    >
+                                      <ArrowPathIcon className="w-4 h-4" />
+                                    </motion.button>
+                                  )}
+                                  {editingSubsection === `${section.id}-sub-${subIdx}` ? (
+                                    <button
+                                      className="editor-save flex items-center gap-1 px-2 py-1 text-xs cursor-pointer"
+                                      onClick={e => { e.stopPropagation(); handleSaveSubsection(section.id, subIdx); }}
+                                    >
+                                      <CheckIcon className="w-4 h-4" /> Save
+                                    </button>
+                                  ) : (
+                                    <motion.button
+                                      className="text-gray-400 cursor-pointer hover:text-[#48B85C]"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setEditingSection(null);
+                                        setEditingSubsection(`${section.id}-sub-${subIdx}`);
+                                        setEditSubsectionContent(subsection.htmlContent);
+                                      }}
+                                      whileHover={{ scale: 1.15, color: "#48B85C" }}
+                                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                    >
+                                      <PencilSquareIcon className="w-4 h-4" />
+                                    </motion.button>
+                                  )}
+                                </div>
+                              </div>
+                              <AnimatePresence mode="wait" initial={false}>
+                                {editingSubsection === `${section.id}-sub-${subIdx}` ? (
+                                  <motion.div
+                                    key="subsection-editor"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="relative"
+                                  >
+                                    <div className="scale-90 origin-top-left">
+                                      <TiptapEditor content={editSubsectionContent} onChange={setEditSubsectionContent} />
+                                    </div>
+                                  </motion.div>
+                                ) : (
+                                  <motion.div
+                                    key="subsection-view"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    <div className="text-gray-600 text-sm prose max-w-none prose-p:my-1" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
                   ))
                 )}
@@ -1239,13 +1747,12 @@ export default function DocumentEditorPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg max-w-md mx-auto ${
-              notification.type === 'success' 
-                ? 'bg-green-500 text-white' 
-                : notification.type === 'error' 
-                ? 'bg-red-500 text-white' 
+            className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 px-6 py-4 rounded-lg shadow-lg max-w-md mx-auto ${notification.type === 'success'
+              ? 'bg-green-500 text-white'
+              : notification.type === 'error'
+                ? 'bg-red-500 text-white'
                 : 'bg-blue-500 text-white'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3">
               {notification.type === 'success' && (

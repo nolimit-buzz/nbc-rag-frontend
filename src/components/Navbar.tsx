@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import React, { useState } from 'react';
-
-
+import React, { useState, useEffect } from 'react';
 
 const menuItems = [
   'Dashboard',
@@ -11,8 +9,37 @@ const menuItems = [
   'Settings',
 ];
 
+interface User {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+function getInitials(user: User | null) {
+  if (!user) return 'U';
+  if (user.firstName && user.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+  if (user.firstName) return user.firstName[0].toUpperCase();
+  if (user.email) return user.email[0].toUpperCase();
+  return 'U';
+}
+
 export default function Navbar() {
-    const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          setUser(JSON.parse(userStr));
+        } catch {
+          setUser(null);
+        }
+      }
+    }
+  }, []);
+
   return (
     <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center px-8">
       <Link href="/">
@@ -32,12 +59,12 @@ export default function Navbar() {
             {activeMenu === item && (
               <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
             )}
-            <a
+            <Link
               href={item === 'Dashboard' ? '/' : item.toLowerCase()}
               className={`transition ${activeMenu === item ? 'text-[#48B85C] font-semibold' : ''}`}
             >
               {item}
-            </a>
+            </Link>
           </motion.div>
         ))}
       </div>
@@ -49,8 +76,12 @@ export default function Navbar() {
         />
       </div>
       <div className="flex items-center gap-4 ml-8">
-        <span className="text-gray-700 text-sm">C. Azubuike</span>
-        <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">CA</div>
+        <span className="text-gray-700 text-sm">
+          {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'Guest'}
+        </span>
+        <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">
+          {getInitials(user)}
+        </div>
       </div>
     </nav>
   );

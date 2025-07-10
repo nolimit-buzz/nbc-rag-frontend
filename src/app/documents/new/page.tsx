@@ -1,13 +1,34 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import {  DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import { COUNTRIES as countries } from "@/lib/constants";
+
+// SDG Goals data
+const SDG_GOALS = [
+  { number: 1, title: "No Poverty" },
+  { number: 2, title: "Zero Hunger" },
+  { number: 3, title: "Good Health and Well-being" },
+  { number: 4, title: "Quality Education" },
+  { number: 5, title: "Gender Equality" },
+  { number: 6, title: "Clean Water and Sanitation" },
+  { number: 7, title: "Affordable and Clean Energy" },
+  { number: 8, title: "Decent Work and Economic Growth" },
+  { number: 9, title: "Industry, Innovation and Infrastructure" },
+  { number: 10, title: "Reduced Inequalities" },
+  { number: 11, title: "Sustainable Cities and Communities" },
+  { number: 12, title: "Responsible Consumption and Production" },
+  { number: 13, title: "Climate Action" },
+  { number: 14, title: "Life Below Water" },
+  { number: 15, title: "Life on Land" },
+  { number: 16, title: "Peace, Justice and Strong Institutions" },
+  { number: 17, title: "Partnerships for the Goals" }
+];
+
 interface FormData {
   companyName: string;
-  dealName: string;
   sector: string;
   transactionType: string;
   structuringLeads: string[];
@@ -42,20 +63,19 @@ const steps = [
 ];
 
 const initialForm: FormData = {
-  companyName: "",
-  dealName: "",
-  sector: "",
-  transactionType: "",
-  structuringLeads: [""],
-  sponsors: [""],
+  companyName: "Electrify Microgrid Limited",
+  sector: "Energy",
+  transactionType: "NBC",
+  structuringLeads: ["Electrify Microgrid Limited"],
+  sponsors: ["Electrify Microgrid Limited"],
   projectDetails: {
-    location: "",
-    sdgGoal: "",
-    tenor: "",
-    debtNeed: "",
+    location: "Nigeria",
+    sdgGoal: "No Poverty",
+    tenor: "10 years",
+    debtNeed: "100 million",
   },
-  marketContext: "",
-  dueDiligenceFlags: [""]
+  marketContext: "Nigeria is a country with a large population and a growing economy. It is a major oil producer and has a large agricultural sector. It is also a major producer of minerals and has a large manufacturing sector.",
+  dueDiligenceFlags: ["No Poverty"]
 };
 
 const sidebarGroups = [
@@ -82,8 +102,8 @@ function NewDocumentForm() {
   const [isCreating, setIsCreating] = useState(false);
   const [creationStatus, setCreationStatus] = useState<string>('');
   const [documentType, setDocumentType] = useState<string>('nbc');
-  const [marketForm, setMarketForm] = useState({ country: '' });
-  const [marketErrors, setMarketErrors] = useState<{ country?: string }>({});
+  const [marketForm, setMarketForm] = useState({ countryName: '' });
+  const [marketErrors, setMarketErrors] = useState<{ countryName?: string }>({});
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -138,9 +158,9 @@ function NewDocumentForm() {
   };
 
   const validateMarketForm = () => {
-    const newErrors: { country?: string } = {};
-    if (!marketForm.country.trim()) {
-      newErrors.country = 'Country is required';
+    const newErrors: { countryName?: string } = {};
+    if (!marketForm.countryName.trim()) {
+      newErrors.countryName = 'Country is required';
     }
     setMarketErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -173,9 +193,10 @@ function NewDocumentForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // const handleNext = () => {
-  //   if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
-  // };
+  const handleNext = () => {
+    if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,8 +229,7 @@ function NewDocumentForm() {
       
       if (documentType === 'market') {
         body = {
-          country: marketForm.country,
-          type: 'market'
+          countryName: marketForm.countryName,
         };
         endpoint = `${process.env.NEXT_PUBLIC_API_URL}/market-reports/create`;
       } else {
@@ -230,18 +250,30 @@ function NewDocumentForm() {
       }
       
       setCreationStatus('Saving to database...');
+      const accessToken = localStorage.getItem('accessToken');
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify(body),
       });
       console.log(res);
       if (!res.ok) throw new Error(`Failed to create ${documentType === 'market' ? 'Market Report' : 'NBC Paper'}`);
       const data = await res.json();
-      if (data.success && data.newNbcPaper && data.newNbcPaper.insertedId) {
+      if (documentType === 'market') {
+        if (data.success && data.marketReport && data.marketReport.id) {
+          setCreationStatus('Redirecting to document...');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push(`/documents/${data.marketReport.id}?type=market`);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } else if (data.success && data.nbcPaper && data.nbcPaper.id) {
         setCreationStatus('Redirecting to document...');
         await new Promise(resolve => setTimeout(resolve, 500));
-        router.push(`/documents/${data.newNbcPaper.insertedId}`);
+        router.push(`/documents/${data.nbcPaper.id}?type=nbc`);
       } else {
         throw new Error('Invalid response format');
       }
@@ -276,7 +308,7 @@ function NewDocumentForm() {
           </nav>
           <div className="mt-auto pt-8">
             <button className="w-full bg-[#48B85C] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3da050] transition">
-              <PlusIcon className="w-5 h-5" />
+              {/* <PlusIcon className="w-5 h-5" /> */}
               New NBC Paper
             </button>
           </div>
@@ -435,8 +467,8 @@ function NewDocumentForm() {
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Country</label>
                         <select
-                          name="country"
-                          value={marketForm.country}
+                          name="countryName"
+                          value={marketForm.countryName}
                           onChange={handleMarketChange}
                           className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
                         >
@@ -445,7 +477,7 @@ function NewDocumentForm() {
                             <option key={country} value={country}>{country}</option>
                           ))}
                         </select>
-                        {marketErrors.country && <div className="text-red-500 text-sm mt-1">{marketErrors.country}</div>}
+                        {marketErrors.countryName && <div className="text-red-500 text-sm mt-1">{marketErrors.countryName}</div>}
                       </div>
                       
                       {/* Submit button for market report */}
@@ -468,177 +500,223 @@ function NewDocumentForm() {
                       </div>
                     </div>
                   ) : (
-                    // NBC Paper Form
+                    // NBC Paper Form - Step-based rendering
                     <div className="space-y-6">
-                      <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">NBC Paper Information</h2>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Company Name</label>
-                        <input 
-                          type="text" 
-                          name="companyName" 
-                          value={form.companyName} 
-                          onChange={handleChange} 
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Deal Name</label>
-                        <input 
-                          type="text" 
-                          name="dealName" 
-                          value={form.dealName} 
-                          onChange={handleChange} 
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Sector</label>
-                        <input 
-                          type="text" 
-                          name="sector" 
-                          value={form.sector} 
-                          onChange={handleChange} 
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Transaction Type</label>
-                        <input 
-                          type="text" 
-                          name="transactionType" 
-                          value={form.transactionType} 
-                          onChange={handleChange} 
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Structuring Leads</label>
-                        {form.structuringLeads.map((lead, idx) => (
-                          <input 
-                            key={idx}
-                            type="text" 
-                            name={`structuringLeads[${idx}]`} 
-                            value={lead} 
-                            onChange={(e) => handleArrayChange('structuringLeads', idx, e.target.value)} 
-                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
-                          />
-                        ))}
-                        <button 
-                          onClick={() => addArrayField('structuringLeads')} 
-                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
-                        >
-                          Add Structuring Lead
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Sponsors</label>
-                        {form.sponsors.map((sponsor, idx) => (
-                          <input 
-                            key={idx}
-                            type="text" 
-                            name={`sponsors[${idx}]`} 
-                            value={sponsor} 
-                            onChange={(e) => handleArrayChange('sponsors', idx, e.target.value)} 
-                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
-                          />
-                        ))}
-                        <button 
-                          onClick={() => addArrayField('sponsors')} 
-                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
-                        >
-                          Add Sponsor
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Project Details</label>
-                        <div className="grid grid-cols-2 gap-4">
+                      <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">
+                        {step === 0 ? 'Basic Information' : 'Project Details'}
+                      </h2>
+                      
+                      {step === 0 ? (
+                        // Step 0: Basic Information
+                        <div className="space-y-6">
                           <div>
-                            <label className="block text-gray-700 font-medium mb-1">Location</label>
+                            <label className="block text-gray-700 font-medium mb-1">Company Name *</label>
                             <input 
                               type="text" 
-                              name="location" 
-                              value={form.projectDetails.location} 
-                              onChange={handleProjectDetailsChange} 
+                              name="companyName" 
+                              value={form.companyName} 
+                              onChange={handleChange} 
                               className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                              placeholder="Enter company name"
                             />
                           </div>
                           <div>
-                            <label className="block text-gray-700 font-medium mb-1">SDG Goal</label>
+                            <label className="block text-gray-700 font-medium mb-1">Sector</label>
                             <input 
                               type="text" 
-                              name="sdgGoal" 
-                              value={form.projectDetails.sdgGoal} 
-                              onChange={handleProjectDetailsChange} 
+                              name="sector" 
+                              value={form.sector} 
+                              onChange={handleChange} 
                               className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                              placeholder="Enter sector"
                             />
                           </div>
                           <div>
-                            <label className="block text-gray-700 font-medium mb-1">Tenor</label>
+                            <label className="block text-gray-700 font-medium mb-1">Transaction Type *</label>
                             <input 
                               type="text" 
-                              name="tenor" 
-                              value={form.projectDetails.tenor} 
-                              onChange={handleProjectDetailsChange} 
+                              name="transactionType" 
+                              value={form.transactionType} 
+                              onChange={handleChange} 
                               className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                              placeholder="Enter transaction type"
                             />
                           </div>
                           <div>
-                            <label className="block text-gray-700 font-medium mb-1">Debt Need</label>
-                            <input 
-                              type="text" 
-                              name="debtNeed" 
-                              value={form.projectDetails.debtNeed} 
-                              onChange={handleProjectDetailsChange} 
-                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                            />
+                            <label className="block text-gray-700 font-medium mb-1">Structuring Leads *</label>
+                            {form.structuringLeads.map((lead, idx) => (
+                              <input 
+                                key={idx}
+                                type="text" 
+                                name={`structuringLeads[${idx}]`} 
+                                value={lead} 
+                                onChange={(e) => handleArrayChange('structuringLeads', idx, e.target.value)} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                                placeholder="Enter structuring lead name"
+                              />
+                            ))}
+                            <button 
+                              type="button"
+                              onClick={() => addArrayField('structuringLeads')} 
+                              className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition mt-2"
+                            >
+                              + Add Structuring Lead
+                            </button>
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Sponsors *</label>
+                            {form.sponsors.map((sponsor, idx) => (
+                              <input 
+                                key={idx}
+                                type="text" 
+                                name={`sponsors[${idx}]`} 
+                                value={sponsor} 
+                                onChange={(e) => handleArrayChange('sponsors', idx, e.target.value)} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                                placeholder="Enter sponsor name"
+                              />
+                            ))}
+                            <button 
+                              type="button"
+                              onClick={() => addArrayField('sponsors')} 
+                              className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition mt-2"
+                            >
+                              + Add Sponsor
+                            </button>
                           </div>
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Market Context</label>
-                        <textarea 
-                          name="marketContext" 
-                          value={form.marketContext} 
-                          onChange={handleChange} 
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                          rows={4}
-                        ></textarea>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Due Diligence Flags</label>
-                        {form.dueDiligenceFlags.map((flag, idx) => (
-                          <input 
-                            key={idx}
-                            type="text" 
-                            name={`dueDiligenceFlags[${idx}]`} 
-                            value={flag} 
-                            onChange={(e) => handleArrayChange('dueDiligenceFlags', idx, e.target.value)} 
-                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
-                          />
-                        ))}
-                        <button 
-                          onClick={() => addArrayField('dueDiligenceFlags')} 
-                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
-                        >
-                          Add Due Diligence Flag
-                        </button>
-                      </div>
+                      ) : (
+                        // Step 1: Project Details
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-gray-700 font-medium mb-1">Location *</label>
+                              <input 
+                                type="text" 
+                                name="location" 
+                                value={form.projectDetails.location} 
+                                onChange={handleProjectDetailsChange} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                                placeholder="Enter project location"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-700 font-medium mb-1">SDG Goal *</label>
+                              <select
+                                name="sdgGoal"
+                                value={form.projectDetails.sdgGoal}
+                                onChange={handleProjectDetailsChange}
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                              >
+                                <option value="">Select SDG Goal</option>
+                                {SDG_GOALS.map(goal => (
+                                  <option key={goal.number} value={goal.number}>{goal.number}. {goal.title}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-gray-700 font-medium mb-1">Tenor (years) *</label>
+                              <input 
+                                type="number" 
+                                name="tenor" 
+                                value={form.projectDetails.tenor} 
+                                onChange={handleProjectDetailsChange} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                                placeholder="Enter tenor in years"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-gray-700 font-medium mb-1">Debt Need (USD) *</label>
+                              <input 
+                                type="number" 
+                                name="debtNeed" 
+                                value={form.projectDetails.debtNeed} 
+                                onChange={handleProjectDetailsChange} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                                placeholder="Enter debt need in USD"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Market Context</label>
+                            <textarea 
+                              name="marketContext" 
+                              value={form.marketContext} 
+                              onChange={handleChange} 
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                              rows={4}
+                              placeholder="Describe the market context and background"
+                            ></textarea>
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Due Diligence Flags</label>
+                            {form.dueDiligenceFlags.map((flag, idx) => (
+                              <input 
+                                key={idx}
+                                type="text" 
+                                name={`dueDiligenceFlags[${idx}]`} 
+                                value={flag} 
+                                onChange={(e) => handleArrayChange('dueDiligenceFlags', idx, e.target.value)} 
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                                placeholder="Enter due diligence flag"
+                              />
+                            ))}
+                            <button 
+                              type="button"
+                              onClick={() => addArrayField('dueDiligenceFlags')} 
+                              className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-200 transition mt-2"
+                            >
+                              + Add Due Diligence Flag
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Step Navigation for NBC Papers */}
+                      {documentType === 'nbc' && (
+                        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                          <button 
+                            type="button"
+                            onClick={handleBack} 
+                            disabled={step === 0}
+                            className={`px-6 py-2 rounded-lg font-medium transition ${
+                              step === 0 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            Back
+                          </button>
+                          
+                          {step === 0 ? (
+                            <button 
+                              type="button"
+                              onClick={handleNext} 
+                              className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition"
+                            >
+                              Next
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={handleSubmit}
+                              type="submit" 
+                              disabled={isCreating}
+                              className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {isCreating ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  Creating...
+                                </>
+                              ) : (
+                                'Create NBC Paper'
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
-                 {documentType === 'nbc' && <div className="flex justify-end mt-6">
-                    <button 
-                      onClick={handleBack} 
-                      className="mr-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition"
-                    >
-                      Back
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="bg-[#48B85C] text-white py-2 px-4 rounded hover:bg-[#3da050] transition"
-                    >
-                      Create NBC Paper
-                    </button>
-                  </div>}
                 </>
               )}
             </motion.form>
