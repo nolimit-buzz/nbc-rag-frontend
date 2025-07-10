@@ -1,8 +1,9 @@
 'use client';
-import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 interface NBCPaper {
   _id: string;
@@ -30,6 +31,8 @@ export default function DashboardPage() {
   const [nbcPapers, setNbcPapers] = useState<NBCPaper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showMainDropdown, setShowMainDropdown] = useState(false);
+  const [showSidebarDropdown, setShowSidebarDropdown] = useState(false);
   const router = useRouter();
 
   // Fetch all NBC papers
@@ -60,6 +63,21 @@ export default function DashboardPage() {
     fetchNbcPapers();
   }, []);
 
+  // Handle clicking outside dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowMainDropdown(false);
+        setShowSidebarDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   return (
     <div className="min-h-screen overflow-y-hidden bg-[#ffffff] flex flex-col">
@@ -81,11 +99,51 @@ export default function DashboardPage() {
               </button>
             ))}
           </nav>
-          <div className="mt-auto pt-8">
-            <button className="w-full bg-[#48B85C] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3da050] transition">
-              <PlusIcon className="w-5 h-5" />
-              New NBC Paper
+          <div className="mt-auto pt-8 relative dropdown-container">
+            <button 
+              className="w-full bg-[#48B85C] text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3da050] transition"
+              onClick={() => setShowSidebarDropdown(!showSidebarDropdown)}
+            >
+              {/* <PlusIcon className="w-5 h-5" /> */}
+             Generate New Document
+              <ChevronDownIcon className="w-4 h-4" />
             </button>
+            
+            <AnimatePresence>
+              {showSidebarDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 p-2 z-[9999]"
+                >
+                  <Link
+                    href="/documents/new?type=nbc"
+                    className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    onClick={() => setShowSidebarDropdown(false)}
+                  >
+                    <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                    <div>
+                      <div className="font-medium text-gray-900">Generate NBC Paper</div>
+                      <div className="text-sm text-gray-500">Create a new NBC paper</div>
+                    </div>
+                  </Link>
+                  
+                  <Link
+                    href="/documents/new?type=market"
+                    className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    onClick={() => setShowSidebarDropdown(false)}
+                  >
+                    <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                    <div>
+                      <div className="font-medium text-gray-900">Generate Market Report</div>
+                      <div className="text-sm text-gray-500">Create a new market report</div>
+                    </div>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </aside>
         {/* Main Content */}
@@ -95,13 +153,52 @@ export default function DashboardPage() {
               <h1 className="text-3xl font-bold text-gray-700 mb-1">Generate NBC Papers</h1>
               <p className="text-gray-500">Fill the information below to start generating NBC papers for your business.</p>
             </div>
-            <button
-              className="border border-[#48B85C] text-[#48B85C] bg-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-[#48B85C] hover:text-white transition text-lg cursor-pointer"
-              onClick={() => router.push('/documents/new')}
-            >
-              <PlusIcon className="w-6 h-6" />
-              New NBC Paper
-            </button>
+            <div className="relative dropdown-container">
+              <button
+                className="border border-[#48B85C] text-[#48B85C] bg-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-[#48B85C] hover:text-white transition text-lg cursor-pointer"
+                onClick={() => setShowMainDropdown(!showMainDropdown)}
+              >
+                <PlusIcon className="w-6 h-6" />
+                New Document
+                <ChevronDownIcon className="w-5 h-5" />
+              </button>
+              
+              <AnimatePresence>
+                {showMainDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
+                  >
+                    <Link
+                      href="/documents/new?type=nbc"
+                      className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                      onClick={() => setShowMainDropdown(false)}
+                    >
+                      <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                      <div>
+                        <div className="font-medium text-gray-900">Generate NBC Paper</div>
+                        <div className="text-sm text-gray-500">Create a new NBC paper</div>
+                      </div>
+                    </Link>
+                    
+                    <Link
+                      href="/documents/new?type=market"
+                      className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                      onClick={() => setShowMainDropdown(false)}
+                    >
+                      <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                      <div>
+                        <div className="font-medium text-gray-900">Generate Market Report</div>
+                        <div className="text-sm text-gray-500">Create a new market report</div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           {/* Statistics Cards - Creative Content */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
@@ -187,13 +284,53 @@ export default function DashboardPage() {
                 <div className="text-center py-12">
                   <DocumentTextIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-700 mb-2">No NBC Papers Found</h3>
-                  <p className="text-gray-500 mb-4">Get started by creating your first NBC paper.</p>
-                  <button
-                    onClick={() => router.push('/documents/new')}
-                    className="bg-[#48B85C] text-white px-4 py-2 rounded-lg hover:bg-[#3da050] transition"
-                  >
-                    Create First Paper
-                  </button>
+                  <p className="text-gray-500 mb-4">Get started by creating your first document.</p>
+                  <div className="relative dropdown-container inline-block">
+                    <button
+                      onClick={() => setShowMainDropdown(!showMainDropdown)}
+                      className="bg-[#48B85C] text-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-[#3da050] transition mx-auto"
+                    >
+                      <PlusIcon className="w-5 h-5" />
+                      Create First Document
+                      <ChevronDownIcon className="w-4 h-4" />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {showMainDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
+                        >
+                          <Link
+                            href="/documents/new?type=nbc"
+                            className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                            onClick={() => setShowMainDropdown(false)}
+                          >
+                            <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                            <div>
+                              <div className="font-medium text-gray-900">Generate NBC Paper</div>
+                              <div className="text-sm text-gray-500">Create a new NBC paper</div>
+                            </div>
+                          </Link>
+                          
+                          <Link
+                            href="/documents/new?type=market"
+                            className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                            onClick={() => setShowMainDropdown(false)}
+                          >
+                            <DocumentTextIcon className="w-5 h-5 text-[#48B85C]" />
+                            <div>
+                              <div className="font-medium text-gray-900">Generate Market Report</div>
+                              <div className="text-sm text-gray-500">Create a new market report</div>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

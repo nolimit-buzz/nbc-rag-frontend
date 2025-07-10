@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { PlusIcon, DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
+import { COUNTRIES as countries } from "@/lib/constants";
 interface FormData {
   companyName: string;
   dealName: string;
@@ -67,20 +68,52 @@ const sidebarGroups = [
 ];
 
 export default function NewNBCPaper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewDocumentForm />
+    </Suspense>
+  );
+}
+
+function NewDocumentForm() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(initialForm);
-  const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [creationStatus, setCreationStatus] = useState<string>('');
+  const [documentType, setDocumentType] = useState<string>('nbc');
+  const [marketForm, setMarketForm] = useState({ country: '' });
+  const [marketErrors, setMarketErrors] = useState<{ country?: string }>({});
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // List of all countries
+
+
+  // Get document type from URL params
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type) {
+      setDocumentType(type);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (documentType === 'nbc') {
+      setStep(0); // Start from Basic Info for NBC
+    } else if (documentType === 'draft') {
+      setStep(0); // Start from Basic Info for Drafts
+    } else {
+      setStep(0); // Default to Basic Info
+    }
+  }, [documentType]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev: FormData) => ({ ...prev, [name]: value }));
   };
 
-  const handleArrayChange = (field: keyof Pick<FormData, 'structuringLeads' | 'sponsors'>, idx: number, value: string) => {
+  const handleArrayChange = (field: keyof Pick<FormData, 'structuringLeads' | 'sponsors' | 'dueDiligenceFlags'>, idx: number, value: string) => {
     setForm((prev: FormData) => ({
       ...prev,
       [field]: prev[field].map((v: string, i: number) => (i === idx ? value : v)),
@@ -95,8 +128,22 @@ export default function NewNBCPaper() {
     }));
   };
 
-  const addArrayField = (field: keyof Pick<FormData, 'structuringLeads' | 'sponsors'>) => {
+  const addArrayField = (field: keyof Pick<FormData, 'structuringLeads' | 'sponsors' | 'dueDiligenceFlags'>) => {
     setForm((prev: FormData) => ({ ...prev, [field]: [...prev[field], ""] }));
+  };
+
+  const handleMarketChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setMarketForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateMarketForm = () => {
+    const newErrors: { country?: string } = {};
+    if (!marketForm.country.trim()) {
+      newErrors.country = 'Country is required';
+    }
+    setMarketErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const validateStep = () => {
@@ -123,19 +170,23 @@ export default function NewNBCPaper() {
       if (!form.projectDetails.tenor.trim()) newErrors.tenor = 'Required field';
       if (!form.projectDetails.debtNeed.trim()) newErrors.debtNeed = 'Required field';
     }
-    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
-  };
+  // const handleNext = () => {
+  //   if (validateStep()) setStep((s) => Math.min(s + 1, steps.length - 1));
+  // };
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!validateStep()) return;
+    
+    if (documentType === 'market') {
+      if (!validateMarketForm()) return;
+    } else {
+      if (!validateStep()) return;
+    }
     
     setIsCreating(true);
     setCreationStatus('Retrieving relevant data...');
@@ -143,7 +194,7 @@ export default function NewNBCPaper() {
     try {
       // Simulate data retrieval step
       await new Promise(resolve => setTimeout(resolve, 1500));
-      setCreationStatus('Generating the NBC paper...');
+      setCreationStatus(documentType === 'market' ? 'Generating the market report...' : 'Generating the NBC paper...');
       
       // Simulate generation step
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -152,28 +203,40 @@ export default function NewNBCPaper() {
       // Simulate finalization step
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Format the body to match the required API structure
-      const body = {
-        structuringLeads: form.structuringLeads,
-        companyName: form.companyName,
-        transactionType: form.transactionType,
-        sponsors: form.sponsors,
-        projectDetails: {
-          tenor: form.projectDetails.tenor ? Number(form.projectDetails.tenor) : undefined,
-          location: form.projectDetails.location,
-          debtNeed: form.projectDetails.debtNeed ? Number(form.projectDetails.debtNeed) : undefined,
-          sdgGoals: form.projectDetails.sdgGoal ? form.projectDetails.sdgGoal : undefined,
-        },
-      };
+      let body;
+      let endpoint;
+      
+      if (documentType === 'market') {
+        body = {
+          country: marketForm.country,
+          type: 'market'
+        };
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/market-reports/create`;
+      } else {
+        // Format the body to match the required API structure for NBC
+        body = {
+          structuringLeads: form.structuringLeads,
+          companyName: form.companyName,
+          transactionType: form.transactionType,
+          sponsors: form.sponsors,
+          projectDetails: {
+            tenor: form.projectDetails.tenor ? Number(form.projectDetails.tenor) : undefined,
+            location: form.projectDetails.location,
+            debtNeed: form.projectDetails.debtNeed ? Number(form.projectDetails.debtNeed) : undefined,
+            sdgGoals: form.projectDetails.sdgGoal ? form.projectDetails.sdgGoal : undefined,
+          },
+        };
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/create`;
+      }
       
       setCreationStatus('Saving to database...');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/nbc-papers/create`, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       console.log(res);
-      if (!res.ok) throw new Error('Failed to create NBC Paper');
+      if (!res.ok) throw new Error(`Failed to create ${documentType === 'market' ? 'Market Report' : 'NBC Paper'}`);
       const data = await res.json();
       if (data.success && data.newNbcPaper && data.newNbcPaper.insertedId) {
         setCreationStatus('Redirecting to document...');
@@ -227,30 +290,39 @@ export default function NewNBCPaper() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, type: 'spring', stiffness: 60 }}
           >
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Create New NBC Paper</h1>
-            <p className="text-gray-500 text-base max-w-2xl">Fill out the following steps to create a new NBC Paper. You&apos;ll provide basic project information, project details, and other relevant context. All fields are required unless marked optional.</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
+              {documentType === 'market' ? 'Create New Market Report' : 'Create New NBC Paper'}
+            </h1>
+            <p className="text-gray-500 text-base max-w-2xl">
+              {documentType === 'market' 
+                ? 'Generate a comprehensive market report for the selected country. Provide the country information below to get started.'
+                : 'Fill out the following steps to create a new NBC Paper. You\'ll provide basic project information, project details, and other relevant context. All fields are required unless marked optional.'
+              }
+            </p>
           </motion.div>
           <div className="flex flex-1 gap-8">
-            {/* Stepper */}
-            <motion.aside
-              className="w-64 bg-white border border-gray-100 rounded-xl p-6 flex flex-col items-center"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, type: 'spring', stiffness: 60, delay: 0.1 }}
-            >
-              <ol className="space-y-8 w-full">
-                {steps.map((s, idx) => (
-                  <li key={s.label} className="flex items-center gap-4">
-                    <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 ${step === idx ? 'border-[#48B85C] bg-green-50 text-[#48B85C] font-bold' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>{idx + 1}</div>
-                    <span className={`text-base ${step === idx ? 'text-[#48B85C] font-semibold' : 'text-gray-400'}`}>{s.label}</span>
-                  </li>
-                ))}
-              </ol>
-            </motion.aside>
+            {/* Stepper - Only show for NBC papers */}
+            {documentType !== 'market' && (
+              <motion.aside
+                className="w-64 bg-white border border-gray-100 rounded-xl p-6 flex flex-col items-center"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, type: 'spring', stiffness: 60, delay: 0.1 }}
+              >
+                <ol className="space-y-8 w-full">
+                  {steps.map((s, idx) => (
+                    <li key={s.label} className="flex items-center gap-4">
+                      <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 ${step === idx ? 'border-[#48B85C] bg-green-50 text-[#48B85C] font-bold' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>{idx + 1}</div>
+                      <span className={`text-base ${step === idx ? 'text-[#48B85C] font-semibold' : 'text-gray-400'}`}>{s.label}</span>
+                    </li>
+                  ))}
+                </ol>
+              </motion.aside>
+            )}
             {/* Form Card */}
             <motion.form
               onSubmit={handleSubmit}
-              className="flex-1 bg-white rounded-xl border border-gray-100 p-8 max-w-2xl"
+              className={`bg-white rounded-xl border border-gray-100 p-8 ${documentType === 'market' ? 'flex-1 max-w-2xl' : 'flex-1 max-w-2xl'}`}
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, type: 'spring', stiffness: 60, delay: 0.2 }}
@@ -266,7 +338,9 @@ export default function NewNBCPaper() {
                     <div className="absolute inset-0 w-16 h-16 bg-green-100 rounded-full animate-pulse opacity-50"></div>
                   </div>
                   
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Creating NBC Paper</h3>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    {documentType === 'market' ? 'Creating Market Report' : 'Creating NBC Paper'}
+                  </h3>
                   <p className="text-gray-600 text-center mb-8 max-w-sm">{creationStatus}</p>
                   
                   {/* Progress steps */}
@@ -297,7 +371,7 @@ export default function NewNBCPaper() {
                       <span className={`font-medium ${
                         creationStatus.includes('Generating') ? 'text-[#48B85C]' : 'text-gray-500'
                       }`}>
-                        Generating the NBC paper
+                        {documentType === 'market' ? 'Generating the market report' : 'Generating the NBC paper'}
                       </span>
                     </div>
                     
@@ -354,152 +428,217 @@ export default function NewNBCPaper() {
                 </div>
               ) : (
                 <>
-                  {step === 0 && (
+                  {documentType === 'market' ? (
+                    // Market Report Form
                     <div className="space-y-6">
-                      <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">1. Basic Information</h2>
+                      <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">Market Report Information</h2>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Country</label>
+                        <select
+                          name="country"
+                          value={marketForm.country}
+                          onChange={handleMarketChange}
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        >
+                          <option value="">Select Country</option>
+                          {countries.map(country => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                        </select>
+                        {marketErrors.country && <div className="text-red-500 text-sm mt-1">{marketErrors.country}</div>}
+                      </div>
+                      
+                      {/* Submit button for market report */}
+                      {submitError && <div className="text-red-500 text-sm mb-4">{submitError}</div>}
+                      <div className="flex justify-end mt-8">
+                        <button 
+                          type="submit" 
+                          disabled={isCreating}
+                          className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isCreating ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              Creating...
+                            </>
+                          ) : (
+                            'Submit'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // NBC Paper Form
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-extrabold text-gray-600 mb-6 pb-2 border-b border-gray-200">NBC Paper Information</h2>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Company Name</label>
-                        <input name="companyName" value={form.companyName} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                        {errors.companyName && <div className="text-red-500 text-sm mt-1">{errors.companyName}</div>}
+                        <input 
+                          type="text" 
+                          name="companyName" 
+                          value={form.companyName} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Deal Name</label>
+                        <input 
+                          type="text" 
+                          name="dealName" 
+                          value={form.dealName} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Sector</label>
+                        <input 
+                          type="text" 
+                          name="sector" 
+                          value={form.sector} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        />
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Transaction Type</label>
-                        <input name="transactionType" value={form.transactionType} onChange={handleChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                        {errors.transactionType && <div className="text-red-500 text-sm mt-1">{errors.transactionType}</div>}
+                        <input 
+                          type="text" 
+                          name="transactionType" 
+                          value={form.transactionType} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        />
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Structuring Leads</label>
-                        <div className="flex flex-col gap-2 mb-2">
-                          {form.structuringLeads.map((lead, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <input value={lead} onChange={e => handleArrayChange('structuringLeads', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                              <button
-                                type="button"
-                                className="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
-                                aria-label="Delete Lead"
-                                onClick={() => setForm((prev: FormData) => ({
-                                  ...prev,
-                                  structuringLeads: prev.structuringLeads.filter((_, i: number) => i !== idx)
-                                }))}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                              {errors.structuringLeads && errors.structuringLeads[idx] && <div className="text-red-500 text-sm mt-1">{errors.structuringLeads[idx]}</div>}
-                            </div>
-                          ))}
-                        </div>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 border border-gray-400 text-gray-700 bg-white px-2 py-0.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition cursor-pointer mt-1"
-                          onClick={() => addArrayField('structuringLeads')}
+                        {form.structuringLeads.map((lead, idx) => (
+                          <input 
+                            key={idx}
+                            type="text" 
+                            name={`structuringLeads[${idx}]`} 
+                            value={lead} 
+                            onChange={(e) => handleArrayChange('structuringLeads', idx, e.target.value)} 
+                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                          />
+                        ))}
+                        <button 
+                          onClick={() => addArrayField('structuringLeads')} 
+                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
                         >
-                          <span className="text-base font-normal">Add Lead +</span>
+                          Add Structuring Lead
                         </button>
                       </div>
                       <div>
                         <label className="block text-gray-700 font-medium mb-1">Sponsors</label>
-                        <div className="flex flex-col gap-2 mb-2">
-                          {form.sponsors.map((sponsor, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <input value={sponsor} onChange={e => handleArrayChange('sponsors', idx, e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                              <button
-                                type="button"
-                                className="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
-                                aria-label="Delete Sponsor"
-                                onClick={() => setForm((prev: FormData) => ({
-                                  ...prev,
-                                  sponsors: prev.sponsors.filter((_, i: number) => i !== idx)
-                                }))}
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                              {errors.sponsors && errors.sponsors[idx] && <div className="text-red-500 text-sm mt-1">{errors.sponsors[idx]}</div>}
-                            </div>
-                          ))}
-                        </div>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 border border-gray-400 text-gray-700 bg-white px-2 py-0.5 rounded-lg text-sm font-medium hover:bg-gray-100 transition cursor-pointer mt-1"
-                          onClick={() => addArrayField('sponsors')}
+                        {form.sponsors.map((sponsor, idx) => (
+                          <input 
+                            key={idx}
+                            type="text" 
+                            name={`sponsors[${idx}]`} 
+                            value={sponsor} 
+                            onChange={(e) => handleArrayChange('sponsors', idx, e.target.value)} 
+                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                          />
+                        ))}
+                        <button 
+                          onClick={() => addArrayField('sponsors')} 
+                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
                         >
-                          <span className="text-base font-normal">Add +</span>
+                          Add Sponsor
+                        </button>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Project Details</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Location</label>
+                            <input 
+                              type="text" 
+                              name="location" 
+                              value={form.projectDetails.location} 
+                              onChange={handleProjectDetailsChange} 
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">SDG Goal</label>
+                            <input 
+                              type="text" 
+                              name="sdgGoal" 
+                              value={form.projectDetails.sdgGoal} 
+                              onChange={handleProjectDetailsChange} 
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Tenor</label>
+                            <input 
+                              type="text" 
+                              name="tenor" 
+                              value={form.projectDetails.tenor} 
+                              onChange={handleProjectDetailsChange} 
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-gray-700 font-medium mb-1">Debt Need</label>
+                            <input 
+                              type="text" 
+                              name="debtNeed" 
+                              value={form.projectDetails.debtNeed} 
+                              onChange={handleProjectDetailsChange} 
+                              className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Market Context</label>
+                        <textarea 
+                          name="marketContext" 
+                          value={form.marketContext} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                          rows={4}
+                        ></textarea>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Due Diligence Flags</label>
+                        {form.dueDiligenceFlags.map((flag, idx) => (
+                          <input 
+                            key={idx}
+                            type="text" 
+                            name={`dueDiligenceFlags[${idx}]`} 
+                            value={flag} 
+                            onChange={(e) => handleArrayChange('dueDiligenceFlags', idx, e.target.value)} 
+                            className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800 mb-2"
+                          />
+                        ))}
+                        <button 
+                          onClick={() => addArrayField('dueDiligenceFlags')} 
+                          className="w-full bg-[#48B85C] text-white py-2 rounded-lg font-medium hover:bg-[#3da050] transition mt-2"
+                        >
+                          Add Due Diligence Flag
                         </button>
                       </div>
                     </div>
                   )}
-                  {step === 1 && (
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-extrabold text-gray-800 mb-6 pb-2 border-b border-gray-200">2. Project Details</h2>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Location</label>
-                        <input name="location" value={form.projectDetails.location} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                        {errors.location && <div className="text-red-500 text-sm mt-1">{errors.location}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">SDG Goal</label>
-                        <select
-                          name="sdgGoal"
-                          value={form.projectDetails.sdgGoal}
-                          onChange={handleProjectDetailsChange}
-                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
-                        >
-                          <option value="">Select SDG Goal</option>
-                          <option value="No Poverty">1. No Poverty</option>
-                          <option value="Zero Hunger">2. Zero Hunger</option>
-                          <option value="Good Health and Well-being">3. Good Health and Well-being</option>
-                          <option value="Quality Education">4. Quality Education</option>
-                          <option value="Gender Equality">5. Gender Equality</option>
-                          <option value="Clean Water and Sanitation">6. Clean Water and Sanitation</option>
-                          <option value="Affordable and Clean Energy">7. Affordable and Clean Energy</option>
-                          <option value="Decent Work and Economic Growth">8. Decent Work and Economic Growth</option>
-                          <option value="Industry, Innovation and Infrastructure">9. Industry, Innovation and Infrastructure</option>
-                          <option value="Reduced Inequalities">10. Reduced Inequalities</option>
-                          <option value="Sustainable Cities and Communities">11. Sustainable Cities and Communities</option>
-                          <option value="Responsible Consumption and Production">12. Responsible Consumption and Production</option>
-                          <option value="Climate Action">13. Climate Action</option>
-                          <option value="Life Below Water">14. Life Below Water</option>
-                          <option value="Life on Land">15. Life on Land</option>
-                          <option value="Peace, Justice and Strong Institutions">16. Peace, Justice and Strong Institutions</option>
-                          <option value="Partnerships for the Goals">17. Partnerships for the Goals</option>
-                        </select>
-                        {errors.sdgGoal && <div className="text-red-500 text-sm mt-1">{errors.sdgGoal}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Tenor</label>
-                        <input name="tenor" value={form.projectDetails.tenor} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                        {errors.tenor && <div className="text-red-500 text-sm mt-1">{errors.tenor}</div>}
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-1">Debt Need</label>
-                        <input name="debtNeed" value={form.projectDetails.debtNeed} onChange={handleProjectDetailsChange} className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800" />
-                        {errors.debtNeed && <div className="text-red-500 text-sm mt-1">{errors.debtNeed}</div>}
-                      </div>
-                    </div>
-                  )}
-                  {/* Step 3 (Additional Information) is hidden for now */}
-                  {/* Navigation Buttons */}
-                  {submitError && <div className="text-red-500 text-sm mb-4">{submitError}</div>}
-                  <div className="flex justify-between mt-8 gap-4">
-                    <button type="button" onClick={handleBack} disabled={step === 0 || isCreating} className="px-6 py-2 rounded-lg border border-gray-300 text-gray-500 bg-white font-medium disabled:opacity-50 cursor-pointer">Back</button>
-                    {step < steps.length - 1 ? (
-                      <button type="button" onClick={handleNext} disabled={isCreating} className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition cursor-pointer disabled:opacity-50">Next Step</button>
-                    ) : (
-                      <button 
-                        type="submit" 
-                        disabled={isCreating}
-                        className="px-6 py-2 rounded-lg bg-[#48B85C] text-white font-medium hover:bg-[#3da050] transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
-                      >
-                        {isCreating ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Creating...
-                          </>
-                        ) : (
-                          'Submit'
-                        )}
-                      </button>
-                    )}
-                  </div>
+                 {documentType === 'nbc' && <div className="flex justify-end mt-6">
+                    <button 
+                      onClick={handleBack} 
+                      className="mr-4 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="bg-[#48B85C] text-white py-2 px-4 rounded hover:bg-[#3da050] transition"
+                    >
+                      Create NBC Paper
+                    </button>
+                  </div>}
                 </>
               )}
             </motion.form>
@@ -508,4 +647,4 @@ export default function NewNBCPaper() {
       </div>
     </div>
   );
-} 
+}
