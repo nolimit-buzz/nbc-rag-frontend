@@ -150,8 +150,8 @@ export default function DashboardPage() {
         <main className="flex-1 p-10 h-[calc(100vh-100px)] overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-700 mb-1">Generate NBC Papers</h1>
-              <p className="text-gray-500">Fill the information below to start generating NBC papers for your business.</p>
+              <h1 className="text-3xl font-bold text-gray-700 mb-1">Generate Documents</h1>
+              <p className="text-gray-500">Fill the information below to start generating business documents for your business.</p>
             </div>
             <div className="relative dropdown-container">
               <button
