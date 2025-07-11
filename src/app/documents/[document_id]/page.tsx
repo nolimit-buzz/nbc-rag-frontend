@@ -196,7 +196,7 @@ export default function DocumentEditorPage() {
     };
 
     fetchNbcPaper();
-  }, [documentId, documentType,handleUnauthorized]);
+  }, [documentId, documentType]);
 
   // When entering edit mode, set editContent to the section's content
   useEffect(() => {
