@@ -41,13 +41,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-hidden">
-      {/* Floating Images */}
-      <Image src="/login-image-1.svg" alt="Floating 1" width={180} height={180} className="hidden md:block absolute top-10 left-10 z-0 opacity-80 animate-float-slow" />
-      <Image src="/login-image-2.svg" alt="Floating 2" width={140} height={140} className="hidden md:block absolute top-1/2 left-0 z-0 opacity-70 animate-float" style={{transform: 'translateY(-50%)'}} />
-      <Image src="/login-image-3.svg" alt="Floating 3" width={160} height={160} className="hidden md:block absolute bottom-10 left-24 z-0 opacity-80 animate-float-reverse" />
-      <Image src="/login-image-4.svg" alt="Floating 4" width={170} height={170} className="hidden md:block absolute top-20 right-10 z-0 opacity-70 animate-float" />
-      <Image src="/login-image-5.svg" alt="Floating 5" width={130} height={130} className="hidden md:block absolute bottom-16 right-24 z-0 opacity-60 animate-float-slow" />
-
       {/* Top Bar */}
       <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-2">
