@@ -42,7 +42,7 @@ export default function Navbar() {
 
   return (
     <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center px-8">
-      <Link href="/">
+      <Link href="/dashboard">
         <div className="flex items-center gap-2 mr-32">
           <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-40 h-auto" />
         </div>
@@ -60,7 +60,7 @@ export default function Navbar() {
               <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
             )}
             <Link
-              href={item === 'Dashboard' ? '/' : item.toLowerCase()}
+              href={item === 'Dashboard' ? '/dashboard' : item.toLowerCase()}
               className={`transition ${activeMenu === item ? 'text-[#48B85C] font-semibold' : ''}`}
             >
               {item}

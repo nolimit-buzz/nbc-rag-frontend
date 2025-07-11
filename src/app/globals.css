@@ -90,3 +90,6 @@ body {
   margin-top: 0.5rem;
   /* margin-bottom: 1rem; */
 }
+.preview{
+  background-color:red !important
+}
