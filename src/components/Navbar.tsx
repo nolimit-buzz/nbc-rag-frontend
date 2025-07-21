@@ -26,6 +26,7 @@ function getInitials(user: User | null) {
 export default function Navbar() {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
   const [user, setUser] = useState<User | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -39,6 +40,36 @@ export default function Navbar() {
       }
     }
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsDropdownOpen(false);
+    // Redirect to login page or home page
+    window.location.href = '/';
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.profile-dropdown')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   return (
     <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center px-8">
@@ -60,7 +91,7 @@ export default function Navbar() {
               <span className="absolute -left-3 w-1 h-1 rounded-full bg-[#48B85C]" />
             )}
             <Link
-              href={item === 'Dashboard' ? '/' : item.toLowerCase()}
+              href={item === 'Dashboard' ? '/dashboard' : item.toLowerCase()}
               className={`transition ${activeMenu === item ? 'text-[#48B85C] font-semibold' : ''}`}
             >
               {item}
@@ -79,8 +110,42 @@ export default function Navbar() {
         <span className="text-gray-700 text-sm">
           {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'Guest'}
         </span>
-        <div className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white">
-          {getInitials(user)}
+        <div className="profile-dropdown relative">
+          <motion.div 
+            className="w-9 h-9 rounded-full bg-[#48B85C] flex items-center justify-center text-lg font-extrabold text-white cursor-pointer"
+            onClick={toggleDropdown}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {getInitials(user)}
+          </motion.div>
+          
+          {isDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+            >
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-900">
+                  {user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : 'Guest'}
+                </p>
+                <p className="text-xs text-gray-500">{user?.email || 'guest@example.com'}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-red-600 transition-colors"
+              >
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Logout
+                </div>
+              </button>
+            </motion.div>
+          )}
         </div>
       </div>
     </nav>
