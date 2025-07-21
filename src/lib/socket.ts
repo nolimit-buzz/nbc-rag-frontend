@@ -38,8 +38,8 @@ export class Socket {
   }
   public updateDoc(room: string, update: Uint8Array) {
     try {
-      const decodedUpdate = new Uint8Array(update); // Convert back from number[]
-      Y.applyUpdate(doc, decodedUpdate);
+      // const decodedUpdate = new Uint8Array(update); // Convert back from number[]
+      // Y.applyUpdate(doc, decodedUpdate);
     } catch (err) {
       console.error('❌ Failed to apply update:', err);
     }
