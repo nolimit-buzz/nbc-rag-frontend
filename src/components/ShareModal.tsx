@@ -86,7 +86,7 @@
         clearTimeout(timeout);
       }
     };
-  }, [query, searchTimeout]); 
+  }, [query]); 
 
   useEffect(() => {
     return () => {

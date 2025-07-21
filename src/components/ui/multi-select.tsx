@@ -38,6 +38,8 @@ export function MultiSelect({
   className,
 }: MultiSelectProps) {
 
+  const [open, setOpen] = React.useState(false);
+
   const handleUnselect = (userToRemove: User) => {
     onSelectionChange(selectedUsers.filter((user) => user._id !== userToRemove._id))
   }
@@ -48,6 +50,7 @@ export function MultiSelect({
       onSelectionChange([...selectedUsers, user])
     }
     setQuery("")
+    setOpen(false); // Close popover after selection
   }
 
   const filteredUsers = users.filter((user) => {
@@ -56,16 +59,18 @@ export function MultiSelect({
   })
 
   return (
-    <Popover open={users.length > 0}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div
           className={cn(
-            "min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+            "min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex flex-wrap gap-1 items-center cursor-pointer",
             className
           )}
+          tabIndex={0}
+          onClick={() => setOpen(true)}
         >
-          <div className="flex flex-wrap gap-1">
-            {selectedUsers.map((user) => (
+          {selectedUsers.length > 0 ? (
+            selectedUsers.map((user) => (
               <Badge
                 key={user._id}
                 variant="secondary"
@@ -99,26 +104,29 @@ export function MultiSelect({
                       e.preventDefault()
                       e.stopPropagation()
                     }}
-                    onClick={() => handleUnselect(user)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnselect(user);
+                    }}
                   >
                     <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
                   </button>
                 </div>
               </Badge>
-            ))}
-            <input
-              placeholder={selectedUsers.length === 0 ? placeholder : ""}
-              value={query}
-              onChange={(e) => {
-                const value = e.target.value;
-                setQuery(value);
-              }}
-              className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-            />
-          </div>
+            ))
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
+        <input
+          autoFocus
+          placeholder={placeholder}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full bg-transparent outline-none px-3 py-2 text-sm placeholder:text-muted-foreground border-b border-input mb-2"
+        />
         <Command>
           <CommandGroup className="max-h-60 overflow-auto">
             {loading ? (
