@@ -1,5 +1,5 @@
   'use client';
-  import { useState, useEffect } from 'react';
+  import { useState, useEffect, useCallback } from 'react';
   import { motion } from 'framer-motion';
   import { DocumentTextIcon, XMarkIcon, UserGroupIcon, LinkIcon } from '@heroicons/react/24/outline';
   import { MultiSelect } from '@/components/ui/multi-select';
@@ -35,7 +35,7 @@
     const [users, setUsers] = useState<User[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-    const [selectedTab, setSelectedTab] = useState<'team' | 'channel' | 'guests'>('team');
+    // const [selectedTab, setSelectedTab] = useState<'team' | 'channel' | 'guests'>('team');
     const [inviteLink, setInviteLink] = useState('');
     const [isInviting, setIsInviting] = useState(false);
     const [inviteStatus, setInviteStatus] = useState<string>('');
@@ -43,13 +43,27 @@
       const [query, setQuery] = useState<string>('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  const generateInviteLink = useCallback(() => {
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/documents/${documentId}?type=${documentType === 'NbcPaper' ? 'nbc' : 'market'}&shared=true`;
+    setInviteLink(link);
+  }, [documentId, documentType]);
+
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
   // Fetch users when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
       generateInviteLink();
     }
-  }, [isOpen, documentId]);
+  }, [isOpen, documentId, generateInviteLink]);
 
   useEffect(() => {
     if (searchTimeout) {
@@ -72,7 +86,7 @@
         clearTimeout(timeout);
       }
     };
-  }, [query]); 
+  }, [query, searchTimeout]); 
 
   useEffect(() => {
     return () => {
@@ -110,20 +124,6 @@
       }
     };
 
-    const generateInviteLink = () => {
-      const baseUrl = window.location.origin;
-      const link = `${baseUrl}/documents/${documentId}?type=${documentType === 'NbcPaper' ? 'nbc' : 'market'}&shared=true`;
-      setInviteLink(link);
-    };
-
-    const copyInviteLink = async () => {
-      try {
-        await navigator.clipboard.writeText(inviteLink);
-        alert('Link copied to clipboard!');
-      } catch (err) {
-        console.error('Failed to copy link:', err);
-      }
-    };
 
     const handleUserSelectionChange = (newSelectedUsers: User[]) => {
       setSelectedUsers(newSelectedUsers);
@@ -177,7 +177,7 @@
         }, 2000);
 
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to invite users';
+        // const errorMessage = err instanceof Error ? err.message : 'Failed to invite users';
         setInviteStatus('Invitation failed');
         console.error('Error inviting users:', err);
 
@@ -189,7 +189,7 @@
     };
 
     const handleClose = () => {
-      setSelectedTab('team');
+      // setSelectedTab('team');
       setSelectedUsers([]);
       setInviteStatus('');
       setIsInviting(false);

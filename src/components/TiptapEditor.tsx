@@ -12,8 +12,8 @@
   import Collaboration from '@tiptap/extension-collaboration'
   import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
   // import { createProvider } from '@/lib/yjs-setup'
-  import { useEffect, useMemo, useRef, useState } from 'react';
-  import { Socket } from '@/lib/socket';
+  import { useRef } from 'react';
+  // import { Socket } from '@/lib/socket';
   import * as Y from 'yjs';
   import { YSocketProvider } from '@/lib/yjs-setup';
   export default function TiptapEditor({
@@ -34,8 +34,8 @@
     if (!socketProviderRef.current) {
       socketProviderRef.current = new YSocketProvider(roomName);
   
-      const ydoc = socketProviderRef.current.doc;
-      const fragment = ydoc.get('prosemirror', Y.XmlFragment);
+      // const ydoc = socketProviderRef.current.doc;
+      // const fragment = ydoc.get('prosemirror', Y.XmlFragment);
   
       // // Initialize only once if empty
       // if (fragment.length === 0 && content) {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -9,7 +9,11 @@ import Link from "next/dist/client/link";
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { Socket } from "@/lib/socket";
+<<<<<<< HEAD
 import { Section, Subsection, Collaborator, User } from "@/lib/interfaces";
+=======
+import { Section, Collaborator, User } from "@/lib/interfaces";
+>>>>>>> merged
 const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
   ssr: false,
   loading: () => <div className="hidden" />
@@ -59,11 +63,11 @@ export default function DocumentEditorPage() {
   } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userAccessLevel, setUserAccessLevel] = useState<'owner' | 'can_edit' | 'can_view' | 'no_access'>('no_access');
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [createdBy, setCreatedBy] = useState<string>('');
+  // const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  // const [createdBy, setCreatedBy] = useState<string>('');
   const [canEdit, setCanEdit] = useState(false);
-  const [canSubmit, setCanSubmit] = useState(false);
-  const socket = new Socket();
+  // const [canSubmit, setCanSubmit] = useState(false);
+  const socket = useMemo(() => new Socket(), []);
   const { toPDF, targetRef } = usePDF({
     filename: `${titleInput.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_nbc_paper.pdf`,
     page: {
@@ -81,14 +85,14 @@ export default function DocumentEditorPage() {
     }, 4000);
   };
 
-  function handleUnauthorized(res: Response) {
+  const handleUnauthorized = useCallback(function handleUnauthorized(res: Response) {
     if (res.status === 401) {
       localStorage.clear();
       router.push('/');
       return true;
     }
     return false;
-  }
+  }, [router]);
 
   const determineUserAccess = (user: User, collaborators: Collaborator[], documentCreatedBy: string): 'owner' | 'can_edit' | 'can_view' | 'no_access' => {
     if (user.id === documentCreatedBy) {
@@ -107,7 +111,7 @@ export default function DocumentEditorPage() {
 
 
   const canUserEdit = (userAccessLevel: string) => userAccessLevel === 'owner' || userAccessLevel === 'can_edit';
-  const canUserSubmit = (userAccessLevel: string) => userAccessLevel === 'owner';
+  // const canUserSubmit = (userAccessLevel: string) => userAccessLevel === 'owner';
 
   const toggleSectionCollapse = (sectionId: string) => {
     setCollapsedSections(prev => {
@@ -177,8 +181,8 @@ export default function DocumentEditorPage() {
         const data = await response.json();
 
         // Set collaborators and createdBy for access control
-        setCollaborators(data.collaborators || []);
-        setCreatedBy(data.createdBy || '');
+        // setCollaborators(data.collaborators || []);
+        // setCreatedBy(data.createdBy || '');
 
         // Determine user access level
         if (currentUser) {
@@ -189,7 +193,7 @@ export default function DocumentEditorPage() {
           setUserAccessLevel(accessLevel);
           console.log("userAccessLevel", accessLevel);
           setCanEdit(canUserEdit(accessLevel));
-          setCanSubmit(canUserSubmit(accessLevel));
+          // setCanSubmit(canUserSubmit(accessLevel));
           if (accessLevel === 'no_access') {
             setError('You do not have permission to access this document.');
             setLoading(false);
@@ -255,7 +259,7 @@ export default function DocumentEditorPage() {
     };
 
     fetchNbcPaper();
-  }, [documentId, documentType, currentUser]);
+  }, [documentId, documentType, currentUser, handleUnauthorized]);
 
   useEffect(() => {
     if (canEdit) {
@@ -858,7 +862,7 @@ export default function DocumentEditorPage() {
   useEffect(() => {
     socket.connect();
     // socket.updateDocument(documentId, documentType || 'nbc');
-  }, [documentId]);
+  }, [documentId, socket]);
 
   // Handler for regenerating a subsection
   const handleRegenerateSubsection = async (sectionTitle: string, subsectionTitle: string) => {
@@ -967,8 +971,8 @@ export default function DocumentEditorPage() {
   };
 
   // Invite state
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteStatus, setInviteStatus] = useState<string>('');
+  // const [isInviting, setIsInviting] = useState(false);
+  // const [inviteStatus, setInviteStatus] = useState<string>('');
 
   // Delete state
   const [isDeleting, setIsDeleting] = useState(false);

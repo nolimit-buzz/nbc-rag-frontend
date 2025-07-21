@@ -26,8 +26,8 @@ export class YSocketProvider {
     });
 
     this.doc.on('update', update => {
-      const updateBuffer = Y.encodeStateAsUpdate(this.doc);
-      this.socket.updateDoc(this.room, updateBuffer);
+      // const updateBuffer = Y.encodeStateAsUpdate(this.doc);
+      this.socket.updateDoc(this.room, update);
     });
 
     this.awareness.on('update', () => {

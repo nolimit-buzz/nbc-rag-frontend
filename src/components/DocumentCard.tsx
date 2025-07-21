@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DocumentTextIcon, ShareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Collaborator } from '@/lib/interfaces';
+import Image from 'next/image';
 
 interface DocumentCardProps {
   document: {
@@ -142,10 +143,12 @@ export default function DocumentCard({
         title={`${collaborator.firstName || ''} ${collaborator.lastName || ''} (${collaborator.role})`}
       >
         {collaborator.profilePicture ? (
-          <img
+          <Image
             src={collaborator.profilePicture}
             alt={`${collaborator.firstName || ''} ${collaborator.lastName || ''}`}
-            className="w-full h-full rounded-full object-cover"
+            className="w-full h-full rounded-full object-cover" 
+            width={24}
+            height={24}
           />
         ) : (
           initials

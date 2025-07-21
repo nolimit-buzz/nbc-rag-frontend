@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Command, CommandGroup, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface User {
   _id: string
@@ -73,10 +74,12 @@ export function MultiSelect({
                 <div className="flex items-center gap-1">
                   <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs font-medium text-white">
                     {user.profilePicture ? (
-                      <img
+                      <Image
                         src={user.profilePicture}
                         alt={`${user.firstName} ${user.lastName}`}
                         className="w-4 h-4 rounded-full object-cover"
+                        width={16}
+                        height={16}
                       />
                     ) : (
                       `${user.firstName[0]}${user.lastName[0]}`
@@ -132,10 +135,12 @@ export function MultiSelect({
                 >
                   <div className="w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-xs font-medium text-white">
                     {user.profilePicture ? (
-                      <img
+                      <Image
                         src={user.profilePicture}
                         alt={`${user.firstName} ${user.lastName}`}
                         className="w-6 h-6 rounded-full object-cover"
+                        width={24}
+                        height={24}
                       />
                     ) : (
                       `${user.firstName[0]}${user.lastName[0]}`
