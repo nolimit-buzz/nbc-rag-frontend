@@ -1,26 +1,19 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePDF } from 'react-to-pdf';
 import Link from "next/dist/client/link";
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
-interface Section {
-  id: string;
-  title: string;
-  content: string;
-  subsections?: Subsection[];
-}
-
-interface Subsection {
-  title: string;
-  htmlContent: string;
-}
-
-// Dynamic import for TiptapEditor with correct props
+import { Socket } from "@/lib/socket";
+import { Section, Collaborator, User } from "@/lib/interfaces";
+const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
+  ssr: false,
+  loading: () => <div className="hidden" />
+});
 const TiptapEditor = dynamic(() => import('@/components/TiptapEditor'), { ssr: false });
 
 export default function DocumentEditorPage() {
@@ -39,7 +32,6 @@ export default function DocumentEditorPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("NBC Paper");
   const [companyName, setCompanyName] = useState("");
-  // New state for API data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [createdAt, setCreatedAt] = useState<string>('');
@@ -52,32 +44,26 @@ export default function DocumentEditorPage() {
   const [countryName, setCountryName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [year, setYear] = useState<string>('');
-  // Preview mode state
-  const [previewMode, setPreviewMode] = useState(false);
-
-  // Submit for approval state
+  const [previewMode, setPreviewMode] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<string>('');
-
-  // Regenerate state
   const [regeneratingSection, setRegeneratingSection] = useState<string | null>(null);
   const [regeneratingSubsection, setRegeneratingSubsection] = useState<string | null>(null);
   const [regenerateStatus, setRegenerateStatus] = useState<string>('');
-
-  // Menu dropdown state
   const [showMenu, setShowMenu] = useState(false);
-
-  // Collapsed sections state
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
-
-  // Notification state
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error' | 'info';
     visible: boolean;
   } | null>(null);
-
-  // PDF generation
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userAccessLevel, setUserAccessLevel] = useState<'owner' | 'can_edit' | 'can_view' | 'no_access'>('no_access');
+  // const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  // const [createdBy, setCreatedBy] = useState<string>('');
+  const [canEdit, setCanEdit] = useState(false);
+  // const [canSubmit, setCanSubmit] = useState(false);
+  const socket = useMemo(() => new Socket(), []);
   const { toPDF, targetRef } = usePDF({
     filename: `${titleInput.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_nbc_paper.pdf`,
     page: {
@@ -88,7 +74,6 @@ export default function DocumentEditorPage() {
     method: 'save'
   });
 
-  // Helper function to show notifications
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setNotification({ message, type, visible: true });
     setTimeout(() => {
@@ -96,17 +81,34 @@ export default function DocumentEditorPage() {
     }, 4000);
   };
 
-  // Helper to handle 401 Unauthorized
-  function handleUnauthorized(res: Response) {
+  const handleUnauthorized = useCallback(function handleUnauthorized(res: Response) {
     if (res.status === 401) {
       localStorage.clear();
       router.push('/');
       return true;
     }
     return false;
-  }
+  }, [router]);
 
-  // Toggle section collapse
+  const determineUserAccess = (user: User, collaborators: Collaborator[], documentCreatedBy: string): 'owner' | 'can_edit' | 'can_view' | 'no_access' => {
+    if (user.id === documentCreatedBy) {
+      return 'owner';
+    }
+
+    console.log("collaborators", collaborators);
+    const collaborator = collaborators.find(collab => collab.userId === user.id);
+    console.log("collaborator", collaborator);
+    if (collaborator) {
+      return collaborator.role;
+    }
+
+    return 'no_access';
+  };
+
+
+  const canUserEdit = (userAccessLevel: string) => userAccessLevel === 'owner' || userAccessLevel === 'can_edit';
+  // const canUserSubmit = (userAccessLevel: string) => userAccessLevel === 'owner';
+
   const toggleSectionCollapse = (sectionId: string) => {
     setCollapsedSections(prev => {
       const newSet = new Set(prev);
@@ -118,6 +120,29 @@ export default function DocumentEditorPage() {
       return newSet;
     });
   };
+
+  // Initialize user data from localStorage
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        console.log(user)
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        router.push('/');
+      }
+    } else {
+      router.push('/');
+    }
+  }, [router]);
+
+  // useEffect(() => {
+  //   socket.connect();
+  //   socket.updateDocument(documentId, documentType || 'nbc');
+
+  // }, [documentId]);
 
   // Fetch NBC paper data
   useEffect(() => {
@@ -150,6 +175,38 @@ export default function DocumentEditorPage() {
         }
 
         const data = await response.json();
+
+        // Set collaborators and createdBy for access control
+        // setCollaborators(data.collaborators || []);
+        // setCreatedBy(data.createdBy || '');
+
+        // Determine user access level
+        if (currentUser) {
+          console.log("currentUser", currentUser);
+          console.log("data.collaborators", data);
+          const accessLevel = determineUserAccess(currentUser, data.collaborators || [], data.createdBy || '');
+          console.log(accessLevel);
+          setUserAccessLevel(accessLevel);
+          console.log("userAccessLevel", accessLevel);
+          setCanEdit(canUserEdit(accessLevel));
+          // setCanSubmit(canUserSubmit(accessLevel));
+          if (accessLevel === 'no_access') {
+            setError('You do not have permission to access this document.');
+            setLoading(false);
+            return;
+          }
+
+          // Show access level notification
+          setTimeout(() => {
+            if (accessLevel === 'owner') {
+              showNotification('You have full access to this document as the owner.', 'info');
+            } else if (accessLevel === 'can_edit') {
+              showNotification('You have edit access to this document.', 'info');
+            } else if (accessLevel === 'can_view') {
+              showNotification('You have view-only access to this document.', 'info');
+            }
+          }, 1000);
+        }
 
         // Convert API response to sections format - handle new structure with content object
         let apiSections = [];
@@ -186,6 +243,8 @@ export default function DocumentEditorPage() {
         setCountryName(data.countryName || "");
         setDescription(data.description || "");
         setYear(data.year || "");
+
+
       } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC paper';
         setError(errorMessage);
@@ -196,8 +255,14 @@ export default function DocumentEditorPage() {
     };
 
     fetchNbcPaper();
-  }, [documentId, documentType]);
+  }, [documentId, documentType, currentUser, handleUnauthorized]);
 
+  useEffect(() => {
+    if (canEdit) {
+      console.log("setting preview mode");
+      setPreviewMode(false);
+    }
+  }, [canEdit]);
   // When entering edit mode, set editContent to the section's content
   useEffect(() => {
     if (editingSection) {
@@ -212,6 +277,12 @@ export default function DocumentEditorPage() {
 
   // Handler for saving edited content
   const handleSave = async (id: string) => {
+    // Check if user has edit permissions
+    if (!canEdit) {
+      showNotification('You do not have permission to edit this document.', 'error');
+      return;
+    }
+
     const section = sections.find(s => s.id === id);
     console.log("section", section);
     if (!section || !documentId) return;
@@ -280,7 +351,7 @@ export default function DocumentEditorPage() {
       const endpoint = documentType === 'market'
         ? `${baseUrl}/market-reports/${documentId}/sections/${sectionKey}`
         : `${baseUrl}/nbc-papers/${documentId}/sections/${sectionKey}`;
-        const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('accessToken');
 
       // Send PUT request to update the section
       const response = await fetch(endpoint, {
@@ -311,9 +382,68 @@ export default function DocumentEditorPage() {
       showNotification(`Error: ${errorMessage}`, 'error');
     }
   };
-
+  const getSectionKey = (sectionTitle: string) => {
+    switch (sectionTitle) {
+      // NBC Paper sections
+      case "Document Header & Summary Table":
+        return "summary_table";
+      case "Company & Project Overview":
+        return "company_overview";
+      case "Transaction Overview":
+        return "transaction_overview";
+      case "Market Overview":
+        return "market_overview";
+      case "Key Strengths & Value Proposition":
+        return "key_strengths";
+      case "Critical Areas for Due Diligence":
+        return "critical_areas";
+      case "Development Impact":
+        return "development_impact";
+      case "Initial Risk Assessment":
+        return "initial_risk_assessment";
+      case "Preliminary KYC Report":
+        return "preliminary_kyc_report";
+      // Market Report sections
+      case "Summary Statistics":
+        return "summary_statistics";
+      case "Overview of Financial System":
+        return "overview_financial_system";
+      case "Bank and Non-Bank Financial Sector":
+        return "bank_non_bank_financial_sector";
+      case "Capital Market":
+        return "capital_market";
+      case "Fixed Income Markets":
+        return "fixed_income_markets";
+      case "Government Securities":
+        return "government_securities";
+      case "Non-Central Government Issuance":
+        return "non_central_government_issuance";
+      case "Secondary Market":
+        return "secondary_market";
+      case "Foreign Exchange":
+        return "foreign_exchange";
+      case "Derivatives":
+        return "derivatives";
+      case "Participation of Foreign Investors and Issuers":
+        return "participation_foreign_investors_issuers";
+      case "Clearing and Settlement":
+        return "clearing_settlement";
+      case "Investment Taxation":
+        return "investment_taxation";
+      case "Key Contacts":
+        return "key_contacts";
+      default:
+        return sectionTitle;
+    }
+  }
   // Handler for saving subsection content
   const handleSaveSubsection = async (sectionId: string, subsectionIndex: number) => {
+    // Check if user has edit permissions
+    if (!canEdit) {
+      showNotification('You do not have permission to edit this document.', 'error');
+      return;
+    }
+
     const section = sections.find(s => s.id === sectionId);
     if (!section || !documentId) return;
 
@@ -351,6 +481,24 @@ export default function DocumentEditorPage() {
             return "investment_taxation";
           case "Key Contacts":
             return "key_contacts";
+          case "Document Header & Summary Table":
+            return "summary_table";
+          case "Company & Project Overview":
+            return "company_overview";
+          case "Transaction Overview":
+            return "transaction_overview";
+          case "Market Overview":
+            return "market_overview";
+          case "Key Strengths & Value Proposition":
+            return "key_strengths";
+          case "Critical Areas for Due Diligence":
+            return "critical_areas";
+          case "Development Impact":
+            return "development_impact";
+          case "Initial Risk Assessment":
+            return "initial_risk_assessment";
+          case "Preliminary KYC Report":
+            return "preliminary_kyc_report";
           default:
             return sectionTitle;
         }
@@ -422,8 +570,137 @@ export default function DocumentEditorPage() {
     }, 500);
   };
 
+  // Handler for deleting document
+  const handleDeleteDocument = async () => {
+    // Check if user has edit permissions (only owners/editors can delete)
+    if (!canEdit) {
+      showNotification('You do not have permission to delete this document.', 'error');
+      return;
+    }
+
+    // Confirm deletion
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!documentId) return;
+
+    setIsDeleting(true);
+    setDeleteStatus('Deleting document...');
+
+    try {
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}`
+        : `${baseUrl}/nbc-papers/${documentId}`;
+      const accessToken = localStorage.getItem('accessToken');
+
+      // Send DELETE request
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (handleUnauthorized(response)) return;
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete document: ${response.status}`);
+      }
+
+      setDeleteStatus('Document deleted successfully!');
+
+      // Show success message and redirect to dashboard
+      setTimeout(() => {
+        setIsDeleting(false);
+        setDeleteStatus('');
+        showNotification('Document deleted successfully!');
+        router.push('/dashboard');
+      }, 2000);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete document';
+      setDeleteStatus('Deletion failed');
+      console.error('Error deleting document:', err);
+
+      setTimeout(() => {
+        setIsDeleting(false);
+        setDeleteStatus('');
+        showNotification(`Error: ${errorMessage}`, 'error');
+      }, 2000);
+    }
+  };
+
+  // Handler for marking document as ready for review
+  const handleMarkAsReady = async () => {
+    // Check if user has edit permissions
+    if (!canEdit) {
+      showNotification('You do not have permission to mark this document as ready.', 'error');
+      return;
+    }
+
+    if (!documentId) return;
+
+    setIsSubmitting(true);
+    setSubmitStatus('Marking as ready...');
+
+    try {
+      // Determine the API endpoint based on document type
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const endpoint = documentType === 'market'
+        ? `${baseUrl}/market-reports/${documentId}`
+        : `${baseUrl}/nbc-papers/${documentId}`;
+      const accessToken = localStorage.getItem('accessToken');
+
+      // Send PUT request to update status
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          status: 'ready for review',
+          updatedAt: new Date().toISOString()
+        })
+      });
+
+      if (handleUnauthorized(response)) return;
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark document as ready: ${response.status}`);
+      }
+
+      setSubmitStatus('Successfully marked as ready!');
+
+      // Update local status
+      setStatus('ready for review');
+
+      // Show success message
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitStatus('');
+        showNotification('Document marked as ready for review!');
+      }, 2000);
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark document as ready';
+      setSubmitStatus('Operation failed');
+      console.error('Error marking document as ready:', err);
+
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitStatus('');
+        showNotification(`Error: ${errorMessage}`, 'error');
+      }, 2000);
+    }
+  };
+
   // Handler for submitting document for approval
   const handleSubmitForApproval = async () => {
+    // Check if user has submit permissions (only owner can submit)
+    if (!canEdit) {
+      showNotification('Only the document owner can submit for approval.', 'error');
+      return;
+    }
+
     if (!documentId) return;
 
     setIsSubmitting(true);
@@ -483,36 +760,19 @@ export default function DocumentEditorPage() {
 
   // Handler for regenerating a section
   const handleRegenerateSection = async (sectionTitle: string) => {
+    // Check if user has regenerate permissions
+    if (!canEdit) {
+      showNotification('You do not have permission to regenerate content.', 'error');
+      return;
+    }
+
     if (!documentId) return;
 
     setRegeneratingSection(sectionTitle);
     setRegenerateStatus('Regenerating section...');
 
     try {
-      const getSectionKey = (sectionTitle: string) => {
-        switch (sectionTitle) {
-          case "Document Header & Summary Table":
-            return "summary_table";
-          case "Company & Project Overview":
-            return "company_overview";
-          case "Transaction Overview":
-            return "transaction_overview";
-          case "Market Overview":
-            return "market_overview";
-          case "Key Strengths & Value Proposition":
-            return "key_strengths";
-          case "Critical Areas for Due Diligence":
-            return "critical_areas";
-          case "Development Impact":
-            return "development_impact";
-          case "Initial Risk Assessment":
-            return "initial_risk_assessment";
-          case "Preliminary KYC Report":
-            return "preliminary_kyc_report";
-          default:
-            return sectionTitle;
-        }
-      }
+
 
       // Prepare the NBC paper object without content
       const nbcPaperWithoutContent = {
@@ -541,7 +801,7 @@ export default function DocumentEditorPage() {
       const endpoint = documentType === 'market'
         ? `${baseUrl}/market-reports/${documentId}/regenerate/`
         : `${baseUrl}/nbc-papers/${documentId}/regenerate`;
-        const accessToken = localStorage.getItem('accessToken');
+      const accessToken = localStorage.getItem('accessToken');
 
       // Send regenerate request
       const response = await fetch(endpoint, {
@@ -566,7 +826,7 @@ export default function DocumentEditorPage() {
         setSections(sections.map(s => {
           console.log("s.title", s.title, "sectionTitle", sectionTitle);
           return s.title === sectionTitle
-            ? { ...s, content: data.regeneratedSection.htmlContent}
+            ? { ...s, content: data.regeneratedSection.htmlContent }
             : s
         }));
 
@@ -595,68 +855,26 @@ export default function DocumentEditorPage() {
     }
   };
 
+  useEffect(() => {
+    socket.connect();
+    // socket.updateDocument(documentId, documentType || 'nbc');
+  }, [documentId, socket]);
+
   // Handler for regenerating a subsection
   const handleRegenerateSubsection = async (sectionTitle: string, subsectionTitle: string) => {
+    // Check if user has regenerate permissions
+    if (!canEdit) {
+      showNotification('You do not have permission to regenerate content.', 'error');
+      return;
+    }
+
     if (!documentId) return;
 
     setRegeneratingSubsection(`${sectionTitle}-${subsectionTitle}`);
     setRegenerateStatus('Regenerating subsection...');
 
     try {
-      const getSectionKey = (sectionTitle: string) => {
-        switch (sectionTitle) {
-          // NBC Paper sections
-          case "Document Header & Summary Table":
-            return "summary_table";
-          case "Company & Project Overview":
-            return "company_overview";
-          case "Transaction Overview":
-            return "transaction_overview";
-          case "Market Overview":
-            return "market_overview";
-          case "Key Strengths & Value Proposition":
-            return "key_strengths";
-          case "Critical Areas for Due Diligence":
-            return "critical_areas";
-          case "Development Impact":
-            return "development_impact";
-          case "Initial Risk Assessment":
-            return "initial_risk_assessment";
-          case "Preliminary KYC Report":
-            return "preliminary_kyc_report";
-          // Market Report sections
-          case "Summary Statistics":
-            return "summary_statistics";
-          case "Overview of Financial System":
-            return "overview_financial_system";
-          case "Bank and Non-Bank Financial Sector":
-            return "bank_non_bank_financial_sector";
-          case "Capital Market":
-            return "capital_market";
-          case "Fixed Income Markets":
-            return "fixed_income_markets";
-          case "Government Securities":
-            return "government_securities";
-          case "Non-Central Government Issuance":
-            return "non_central_government_issuance";
-          case "Secondary Market":
-            return "secondary_market";
-          case "Foreign Exchange":
-            return "foreign_exchange";
-          case "Derivatives":
-            return "derivatives";
-          case "Participation of Foreign Investors and Issuers":
-            return "participation_foreign_investors_issuers";
-          case "Clearing and Settlement":
-            return "clearing_settlement";
-          case "Investment Taxation":
-            return "investment_taxation";
-          case "Key Contacts":
-            return "key_contacts";
-          default:
-            return sectionTitle;
-        }
-      }
+
 
       // Prepare the paper object without content
       const nbcPaperWithoutContent = {
@@ -683,7 +901,7 @@ export default function DocumentEditorPage() {
       const subsectionKey = getSectionKey(subsectionTitle);
 
       console.log(`Regenerating subsection: ${sectionKey}/${subsectionKey}`);
-      
+
       // Determine the API endpoint based on document type
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       const endpoint = documentType === 'market'
@@ -747,6 +965,23 @@ export default function DocumentEditorPage() {
       }, 2000);
     }
   };
+
+  // Invite state
+  // const [isInviting, setIsInviting] = useState(false);
+  // const [inviteStatus, setInviteStatus] = useState<string>('');
+
+  // Delete state
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<string>('');
+
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const confirmDeleteDocument = async () => {
+    setShowDeleteDialog(false);
+    handleDeleteDocument();
+  };
+
   return (
     <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
@@ -788,7 +1023,7 @@ export default function DocumentEditorPage() {
               <div className="w-12 h-12 rounded-full bg-[#48B85C] flex items-center justify-center text-2xl font-extrabold text-white">NB</div>
               <div>
                 <div className="flex items-center gap-2">
-                  {editingTitle ? (
+                  {editingTitle && canEdit ? (
                     <>
                       <input
                         className="text-lg font-semibold text-gray-800 border-b border-[#48B85C] focus:outline-none bg-transparent px-1 min-w-[500px] w-auto"
@@ -815,12 +1050,14 @@ export default function DocumentEditorPage() {
                   ) : (
                     <>
                       <span className="text-lg font-semibold text-gray-800">{titleInput}</span>
-                      <button
-                        className="text-gray-400 hover:text-[#48B85C]"
-                        onClick={() => { setEditingTitle(true); setTitleInput(titleInput); }}
-                      >
-                        <PencilSquareIcon className="w-5 h-5 cursor-pointer" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          className="text-gray-400 hover:text-[#48B85C]"
+                          onClick={() => { setEditingTitle(true); setTitleInput(titleInput); }}
+                        >
+                          <PencilSquareIcon className="w-5 h-5 cursor-pointer" />
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -829,13 +1066,25 @@ export default function DocumentEditorPage() {
                   {author && <span>Author: {author}</span>}
                   {status && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                      status === 'published' ? 'bg-green-100 text-green-800' :
-                        status === 'review' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
+                      status === 'ready for review' ? 'bg-yellow-100 text-yellow-800' :
+                        status === 'published' ? 'bg-green-100 text-green-800' :
+                          status === 'review' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
                       }`}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status === 'ready for review' ? 'Ready for Review' : status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
                   )}
+                  {/* User Access Level Indicator */}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${userAccessLevel === 'owner' ? 'bg-purple-100 text-purple-800' :
+                      userAccessLevel === 'can_edit' ? 'bg-blue-100 text-blue-800' :
+                        userAccessLevel === 'can_view' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
+                    {userAccessLevel === 'owner' ? 'Owner' :
+                      userAccessLevel === 'can_edit' ? 'Editor' :
+                        userAccessLevel === 'can_view' ? 'Viewer' :
+                          'No Access'}
+                  </span>
                   {createdAt && (
                     <span>
                       Created: {new Date(createdAt).toLocaleDateString('en-US', {
@@ -861,25 +1110,33 @@ export default function DocumentEditorPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-auto">
-                <button
-                  onClick={() => setPreviewMode(!previewMode)}
-                  className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${previewMode
-                    ? 'bg-[#48B85C] text-white hover:bg-[#3da050]'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                >
-                  {previewMode ? (
-                    <>
-                      <PencilSquareIcon className="w-4 h-4" />
-                      Edit Mode
-                    </>
-                  ) : (
-                    <>
-                      <CheckIcon className="w-4 h-4" />
-                      Preview Mode
-                    </>
-                  )}
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setPreviewMode(!previewMode)}
+                    className={`px-4 py-2 rounded font-semibold transition flex items-center gap-2 cursor-pointer ${previewMode
+                      ? 'bg-[#48B85C] text-white hover:bg-[#3da050]'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                  >
+                    {previewMode ? (
+                      <>
+                        <PencilSquareIcon className="w-4 h-4" />
+                        Edit Mode
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon className="w-4 h-4" />
+                        Preview Mode
+                      </>
+                    )}
+                  </button>
+                )}
+                {!canEdit && (
+                  <div className="px-4 py-2 rounded font-semibold bg-gray-100 text-gray-500 flex items-center gap-2">
+                    <CheckIcon className="w-4 h-4" />
+                    View Only
+                  </div>
+                )}
                 {previewMode && (
                   <button
                     onClick={handleDownloadPDF}
@@ -913,8 +1170,25 @@ export default function DocumentEditorPage() {
                 transition={{ duration: 0.15 }}
                 className="fixed top-40 right-8 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
               >
+                {/* Mark as Ready Option */}
+                {status === 'draft' && !isSubmitting && canEdit && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      handleMarkAsReady();
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  >
+                    <CheckIcon className="w-5 h-5 text-green-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Mark as Ready</div>
+                      <div className="text-sm text-gray-500">Mark document as ready for review</div>
+                    </div>
+                  </button>
+                )}
+
                 {/* Submit for Approval Option */}
-                {status === 'draft' && !isSubmitting && (
+                {status === 'ready for review' && !isSubmitting && canEdit && (
                   <button
                     onClick={() => {
                       setShowMenu(false);
@@ -935,8 +1209,19 @@ export default function DocumentEditorPage() {
                   <div className="px-4 py-3 flex items-center gap-3">
                     <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                     <div>
-                      <div className="font-medium text-gray-900">Submitting...</div>
+                      <div className="font-medium text-gray-900">Processing...</div>
                       <div className="text-sm text-gray-500">{submitStatus}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Delete Status Display */}
+                {isDeleting && (
+                  <div className="px-4 py-3 flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div>
+                      <div className="font-medium text-gray-900">Deleting...</div>
+                      <div className="text-sm text-gray-500">{deleteStatus}</div>
                     </div>
                   </div>
                 )}
@@ -958,6 +1243,23 @@ export default function DocumentEditorPage() {
 
                 {/* Divider */}
                 <div className="border-t border-gray-200 my-2"></div>
+
+                {/* Delete Document Option */}
+                {canEdit && !isDeleting && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowDeleteDialog(true);
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                  >
+                    <TrashIcon className="w-5 h-5 text-red-600" />
+                    <div>
+                      <div className="font-medium text-red-600">Delete Document</div>
+                      <div className="text-sm text-red-500">Permanently delete this document</div>
+                    </div>
+                  </button>
+                )}
 
                 {/* New NBC Paper Option */}
                 <Link
@@ -1120,17 +1422,18 @@ export default function DocumentEditorPage() {
                     {/* Document Header */}
                     <div className="text-center mb-12">
                       <h1 className="text-3xl font-bold text-gray-900 mb-4">{titleInput}</h1>
-
+                      <div className="text-gray-500 text-lg">NBC Paper</div>
                       <div className="flex items-center justify-center gap-4 text-sm text-gray-400 mt-2">
-                        {/* <span>ID: {documentId}</span>
+                        <span>ID: {documentId}</span>
                         {author && <span>Author: {author}</span>}
                         {status && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                            status === 'published' ? 'bg-green-100 text-green-800' :
-                              status === 'review' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
+                            status === 'ready for review' ? 'bg-yellow-100 text-yellow-800' :
+                              status === 'published' ? 'bg-green-100 text-green-800' :
+                                status === 'review' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
                             }`}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                            {status === 'ready for review' ? 'Ready for Review' : status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
                         )}
                         {createdAt && (
@@ -1143,8 +1446,8 @@ export default function DocumentEditorPage() {
                               minute: '2-digit'
                             })}
                           </span>
-                        )} */}
-                        {/* {updatedAt && updatedAt !== createdAt && (
+                        )}
+                        {updatedAt && updatedAt !== createdAt && (
                           <span>
                             Updated: {new Date(updatedAt).toLocaleDateString('en-US', {
                               year: 'numeric',
@@ -1154,12 +1457,12 @@ export default function DocumentEditorPage() {
                               minute: '2-digit'
                             })}
                           </span>
-                        )} */}
+                        )}
                       </div>
                     </div>
 
                     {/* Document Content */}
-                    <div className="space-y-8 preview">
+                    <div className="space-y-8">
                       {sections.map((section, idx) => (
                         <motion.div
                           key={section.id}
@@ -1171,17 +1474,17 @@ export default function DocumentEditorPage() {
                         >
                           {/* Section Header with single color */}
                           <div className="mb-6">
-                            {(idx > 0) && <h2 className="text-xl font-bold mb-4 text-gray-800">
-                              {idx}. {section.title}
-                            </h2>}
+                            <h2 className="text-2xl font-bold mb-4 px-6 py-4 text-white bg-gray-800">
+                              {section.title}
+                            </h2>
                           </div>
-<div>
+
                           {/* Section Content */}
-                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }}/>
+                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
 
                           {/* Subsections */}
                           {section.subsections && section.subsections.length > 0 && (
-                            <div className="mt-8 columns-2 break-normal gap-8" style ={{wordBreak:"keep-all"}}>
+                            <div className="mt-6 space-y-4">
                               {section.subsections.map((subsection, subIdx) => (
                                 <motion.div
                                   key={`${section.id}-sub-${subIdx}`}
@@ -1189,17 +1492,17 @@ export default function DocumentEditorPage() {
                                   initial={{ opacity: 0, x: -20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
-                                  className="mb-6"
+                                  className="ml-6 pl-6 border-l-1 border-gray-300 bg-gray-50 rounded-r-lg p-4"
                                 >
-                                  <h3 className="text-lg font-semibold text-gray-800">
+                                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
                                     {subsection.title}
                                   </h3>
-                                  <div style={{wordBreak:"keep-all", marginTop: "0 !important"}} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                  <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
                                 </motion.div>
                               ))}
                             </div>
                           )}
-</div>
+
                           {/* Decorative element */}
                           {idx < sections.length - 1 && (
                             <div className="flex justify-center mt-8">
@@ -1237,49 +1540,58 @@ export default function DocumentEditorPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <div className="font-semibold text-gray-700 flex-1">{section.title}</div>
                         <div className="flex items-center gap-1">
-                          {regeneratingSection === section.title ? (
-                            <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
-                              <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                              {regenerateStatus}
-                            </div>
-                          ) : (
-                            <motion.button
-                              className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
-                              onClick={e => { e.stopPropagation(); handleRegenerateSection(section.title); }}
-                              whileHover={{ scale: 1.15, color: "#2563eb" }}
-                              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                              title="Regenerate section"
-                            >
-                              <ArrowPathIcon className="w-4 h-4" />
-                            </motion.button>
+                          {canEdit && (
+                            <>
+                              {regeneratingSection === section.title ? (
+                                <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
+                                  <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                  {regenerateStatus}
+                                </div>
+                              ) : (
+                                <motion.button
+                                  className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
+                                  onClick={e => { e.stopPropagation(); handleRegenerateSection(section.title); }}
+                                  whileHover={{ scale: 1.15, color: "#2563eb" }}
+                                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                  title="Regenerate section"
+                                >
+                                  <ArrowPathIcon className="w-4 h-4" />
+                                </motion.button>
+                              )}
+                            </>
                           )}
-                          {editingSection === section.id ? (
-                            <button
-                              className="editor-save flex items-center gap-1 px-3 py-1 text-sm cursor-pointer"
-                              onClick={e => { e.stopPropagation(); handleSave(section.id); }}
-                            >
-                              <CheckIcon className="w-5 h-5" /> Save
-                            </button>
-                          ) : (
-                            <motion.button
-                              className={`font-bold rounded p-1 transition ${regeneratingSection === section.id
-                                ? 'text-gray-300 cursor-not-allowed'
-                                : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'
-                                }`}
-                              onClick={e => {
-                                if (regeneratingSection !== section.id) {
-                                  e.stopPropagation();
-                                  // Clear any existing edit states before setting new one
-                                  setEditingSection(section.id);
-                                  setEditingSubsection(null);
-                                }
-                              }}
-                              whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#48B85C" } : {}}
-                              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                              disabled={regeneratingSection === section.id}
-                            >
-                              <PencilSquareIcon className={`${regeneratingSection === section.title ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'} w-5 h-5`} />
-                            </motion.button>
+                          {canEdit && (
+                            <>
+                              {editingSection === section.id ? (
+                                <button
+                                  className="editor-save flex items-center gap-1 px-3 py-1 text-sm cursor-pointer"
+                                  onClick={e => { e.stopPropagation(); handleSave(section.id); }}
+                                >
+                                  <CheckIcon className="w-5 h-5" /> Save
+                                </button>
+                              ) : (
+                                <motion.button
+                                  className={`font-bold rounded p-1 transition ${regeneratingSection === section.id
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'
+                                    }`}
+                                  onClick={e => {
+                                    if (regeneratingSection !== section.id) {
+                                      e.stopPropagation();
+                                      // socket.joinRoom(`${documentId}-${getSectionKey(section.title)}`)
+
+                                      setEditingSection(section.id);
+                                      setEditingSubsection(null);
+                                    }
+                                  }}
+                                  whileHover={regeneratingSection !== section.id ? { scale: 1.15, color: "#48B85C" } : {}}
+                                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                  disabled={regeneratingSection === section.id}
+                                >
+                                  <PencilSquareIcon className={`${regeneratingSection === section.title ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-[#48B85C]'} w-5 h-5`} />
+                                </motion.button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -1302,7 +1614,7 @@ export default function DocumentEditorPage() {
                               </div>
                             )}
                             <div className={regeneratingSection === section.id ? 'pointer-events-none opacity-50' : ''}>
-                              <TiptapEditor content={editContent} onChange={setEditContent} />
+                              <TiptapEditor content={editContent} onChange={setEditContent} roomName={`${documentId}-${getSectionKey(section.title)}`}/>
                             </div>
                           </motion.div>
                         ) : (
@@ -1335,43 +1647,51 @@ export default function DocumentEditorPage() {
                                   {subsection.title}
                                 </h4>
                                 <div className="flex items-center gap-1">
-                                  {regeneratingSubsection === `${section.title}-${subsection.title}` ? (
-                                    <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
-                                      <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                      {regenerateStatus}
-                                    </div>
-                                  ) : (
-                                    <motion.button
-                                      className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
-                                      onClick={e => { e.stopPropagation(); handleRegenerateSubsection(section.title, subsection.title); }}
-                                      whileHover={{ scale: 1.15, color: "#2563eb" }}
-                                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                                      title="Regenerate subsection"
-                                    >
-                                      <ArrowPathIcon className="w-4 h-4" />
-                                    </motion.button>
+                                  {canEdit && (
+                                    <>
+                                      {regeneratingSubsection === `${section.title}-${subsection.title}` ? (
+                                        <div className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600">
+                                          <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                          {regenerateStatus}
+                                        </div>
+                                      ) : (
+                                        <motion.button
+                                          className="text-blue-500 font-bold rounded p-1 cursor-pointer hover:text-blue-600"
+                                          onClick={e => { e.stopPropagation(); handleRegenerateSubsection(section.title, subsection.title); }}
+                                          whileHover={{ scale: 1.15, color: "#2563eb" }}
+                                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                          title="Regenerate subsection"
+                                        >
+                                          <ArrowPathIcon className="w-4 h-4" />
+                                        </motion.button>
+                                      )}
+                                    </>
                                   )}
-                                  {editingSubsection === `${section.id}-sub-${subIdx}` ? (
-                                    <button
-                                      className="editor-save flex items-center gap-1 px-2 py-1 text-xs cursor-pointer"
-                                      onClick={e => { e.stopPropagation(); handleSaveSubsection(section.id, subIdx); }}
-                                    >
-                                      <CheckIcon className="w-4 h-4" /> Save
-                                    </button>
-                                  ) : (
-                                    <motion.button
-                                      className="text-gray-400 cursor-pointer hover:text-[#48B85C]"
-                                      onClick={e => {
-                                        e.stopPropagation();
-                                        setEditingSection(null);
-                                        setEditingSubsection(`${section.id}-sub-${subIdx}`);
-                                        setEditSubsectionContent(subsection.htmlContent);
-                                      }}
-                                      whileHover={{ scale: 1.15, color: "#48B85C" }}
-                                      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                                    >
-                                      <PencilSquareIcon className="w-4 h-4" />
-                                    </motion.button>
+                                  {canEdit && (
+                                    <>
+                                      {editingSubsection === `${section.id}-sub-${subIdx}` ? (
+                                        <button
+                                          className="editor-save flex items-center gap-1 px-2 py-1 text-xs cursor-pointer"
+                                          onClick={e => { e.stopPropagation(); handleSaveSubsection(section.id, subIdx); }}
+                                        >
+                                          <CheckIcon className="w-4 h-4" /> Save
+                                        </button>
+                                      ) : (
+                                        <motion.button
+                                          className="text-gray-400 cursor-pointer hover:text-[#48B85C]"
+                                          onClick={e => {
+                                            e.stopPropagation();
+                                            setEditingSection(null);
+                                            setEditingSubsection(`${section.id}-sub-${subIdx}`);
+                                            setEditSubsectionContent(subsection.htmlContent);
+                                          }}
+                                          whileHover={{ scale: 1.15, color: "#48B85C" }}
+                                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                        >
+                                          <PencilSquareIcon className="w-4 h-4" />
+                                        </motion.button>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               </div>
@@ -1386,7 +1706,7 @@ export default function DocumentEditorPage() {
                                     className="relative"
                                   >
                                     <div className="scale-90 origin-top-left">
-                                      <TiptapEditor content={editSubsectionContent} onChange={setEditSubsectionContent} />
+                                      <TiptapEditor content={editSubsectionContent} onChange={setEditSubsectionContent} roomName={`${documentId}-${getSectionKey(section.title)}-${getSectionKey(subsection.title)}`} />
                                     </div>
                                   </motion.div>
                                 ) : (
@@ -1552,7 +1872,7 @@ export default function DocumentEditorPage() {
           /* Improve text wrapping and prevent cutoff */
           word-wrap: break-word !important;
           overflow-wrap: break-word !important;
-          hyphens: none !important;
+          hyphens: auto !important;
           line-height: 1.6 !important;
           max-width: 100% !important;
           box-sizing: border-box !important;
@@ -1569,18 +1889,17 @@ export default function DocumentEditorPage() {
           break-after: avoid !important;
           page-break-inside: avoid !important;
           break-inside: avoid !important;
-          margin-bottom: 0em !important;
+          margin-bottom: 1em !important;
         }
         
         .pdf-target p,
         .pdf-target div,
         .pdf-target li {
-          // page-break-inside: avoid !important;
-          // break-inside: avoid !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
           orphans: 3 !important;
           widows: 3 !important;
-          // margin-bottom: 0.5em !important;
-          word-break: keep-all !important;
+          margin-bottom: 0.5em !important;
         }
         
         .pdf-target table {
@@ -1598,7 +1917,6 @@ export default function DocumentEditorPage() {
         
         /* Table and List Styles for View Mode */
         .prose table {
-       
           border-collapse: separate !important;
           border-spacing: 0 !important;
           margin: 1.5em 0 !important;
@@ -1609,14 +1927,10 @@ export default function DocumentEditorPage() {
           border-radius: 12px !important;
           background: white !important;
         }
-          .prose table:first-child{
-            border:none !important;
-            border-collapse:collapse !important;
-            width: max-content !important;
-          }
         
         .prose table td,
         .prose table th {
+          border: none !important;
           border-bottom: 1px solid #e5e7eb !important;
           border-right: 1px solid #e5e7eb !important;
           box-sizing: border-box !important;
@@ -1627,23 +1941,16 @@ export default function DocumentEditorPage() {
           font-size: 14px !important;
           line-height: 1.5 !important;
         }
-        .prose table:first-child td, .prose table:first-child th{
-          border: none !important
-          padding: 0px 0px !important;
-          line-height: 0% !important;
-          min-width: 0px !important;
-          border-right:none !important;
-          border-bottom:none !important;
-        }
+        
         .prose table th {
-          // background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
           font-weight: 600 !important;
           text-align: left !important;
           color: #374151 !important;
           font-size: 14px !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
-          // border-bottom: 1px solid #e5e7eb !important;
+          border-bottom: 2px solid #e5e7eb !important;
         }
         
         .prose table td {
@@ -1792,6 +2099,13 @@ export default function DocumentEditorPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <DeleteModal
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDeleteDocument}
+        isLoading={isDeleting}
+      />
     </div>
   );
 } 
