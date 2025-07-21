@@ -9,11 +9,7 @@ import Link from "next/dist/client/link";
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { Socket } from "@/lib/socket";
-<<<<<<< HEAD
-import { Section, Subsection, Collaborator, User } from "@/lib/interfaces";
-=======
 import { Section, Collaborator, User } from "@/lib/interfaces";
->>>>>>> merged
 const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
   ssr: false,
   loading: () => <div className="hidden" />
