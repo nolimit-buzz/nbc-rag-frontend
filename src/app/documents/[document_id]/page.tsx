@@ -1423,46 +1423,11 @@ export default function DocumentEditorPage() {
                     <div className="text-center mb-12">
                       <h1 className="text-3xl font-bold text-gray-900 mb-4">{titleInput}</h1>
                       <div className="text-gray-500 text-lg">NBC Paper</div>
-                      <div className="flex items-center justify-center gap-4 text-sm text-gray-400 mt-2">
-                        <span>ID: {documentId}</span>
-                        {author && <span>Author: {author}</span>}
-                        {status && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                            status === 'ready for review' ? 'bg-yellow-100 text-yellow-800' :
-                              status === 'published' ? 'bg-green-100 text-green-800' :
-                                status === 'review' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                            }`}>
-                            {status === 'ready for review' ? 'Ready for Review' : status.charAt(0).toUpperCase() + status.slice(1)}
-                          </span>
-                        )}
-                        {createdAt && (
-                          <span>
-                            Created: {new Date(createdAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        )}
-                        {updatedAt && updatedAt !== createdAt && (
-                          <span>
-                            Updated: {new Date(updatedAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        )}
-                      </div>
+                     
                     </div>
 
                     {/* Document Content */}
-                    <div className="space-y-8">
+                    <div className="space-y-8 preview">
                       {sections.map((section, idx) => (
                         <motion.div
                           key={section.id}
@@ -1474,17 +1439,17 @@ export default function DocumentEditorPage() {
                         >
                           {/* Section Header with single color */}
                           <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 px-6 py-4 text-white bg-gray-800">
-                              {section.title}
-                            </h2>
+                            {(idx > 0) && <h2 className="text-xl font-bold mb-4 text-gray-800">
+                              {idx}. {section.title}
+                            </h2>}
                           </div>
-
+<div>
                           {/* Section Content */}
-                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
+                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }}/>
 
                           {/* Subsections */}
                           {section.subsections && section.subsections.length > 0 && (
-                            <div className="mt-6 space-y-4">
+                            <div className="mt-8 columns-2 break-normal gap-8" style ={{wordBreak:"keep-all"}}>
                               {section.subsections.map((subsection, subIdx) => (
                                 <motion.div
                                   key={`${section.id}-sub-${subIdx}`}
@@ -1492,17 +1457,17 @@ export default function DocumentEditorPage() {
                                   initial={{ opacity: 0, x: -20 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
-                                  className="ml-6 pl-6 border-l-1 border-gray-300 bg-gray-50 rounded-r-lg p-4"
+                                  className="mb-6"
                                 >
-                                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                                  <h3 className="text-lg font-semibold text-gray-800">
                                     {subsection.title}
                                   </h3>
-                                  <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                  <div style={{wordBreak:"keep-all", marginTop: "0 !important"}} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
                                 </motion.div>
                               ))}
                             </div>
                           )}
-
+</div>
                           {/* Decorative element */}
                           {idx < sections.length - 1 && (
                             <div className="flex justify-center mt-8">
@@ -1734,7 +1699,7 @@ export default function DocumentEditorPage() {
         </>
       )}
 
-      <style jsx global>{`
+<style jsx global>{`
         /* PDF Generation - Comprehensive color function overrides */
         .pdf-target,
         .pdf-target * {
@@ -1872,7 +1837,7 @@ export default function DocumentEditorPage() {
           /* Improve text wrapping and prevent cutoff */
           word-wrap: break-word !important;
           overflow-wrap: break-word !important;
-          hyphens: auto !important;
+          hyphens: none !important;
           line-height: 1.6 !important;
           max-width: 100% !important;
           box-sizing: border-box !important;
@@ -1889,17 +1854,18 @@ export default function DocumentEditorPage() {
           break-after: avoid !important;
           page-break-inside: avoid !important;
           break-inside: avoid !important;
-          margin-bottom: 1em !important;
+          margin-bottom: 0em !important;
         }
         
         .pdf-target p,
         .pdf-target div,
         .pdf-target li {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
+          // page-break-inside: avoid !important;
+          // break-inside: avoid !important;
           orphans: 3 !important;
           widows: 3 !important;
-          margin-bottom: 0.5em !important;
+          // margin-bottom: 0.5em !important;
+          word-break: keep-all !important;
         }
         
         .pdf-target table {
@@ -1917,6 +1883,7 @@ export default function DocumentEditorPage() {
         
         /* Table and List Styles for View Mode */
         .prose table {
+       
           border-collapse: separate !important;
           border-spacing: 0 !important;
           margin: 1.5em 0 !important;
@@ -1927,10 +1894,14 @@ export default function DocumentEditorPage() {
           border-radius: 12px !important;
           background: white !important;
         }
+        .prose table:first-child{
+            border:none !important;
+            border-collapse:collapse !important;
+            width: max-content !important;
+          }
         
         .prose table td,
         .prose table th {
-          border: none !important;
           border-bottom: 1px solid #e5e7eb !important;
           border-right: 1px solid #e5e7eb !important;
           box-sizing: border-box !important;
@@ -1941,16 +1912,23 @@ export default function DocumentEditorPage() {
           font-size: 14px !important;
           line-height: 1.5 !important;
         }
-        
+        .prose table:first-child td, .prose table:first-child th{
+          border: none !important
+          padding: 0px 0px !important;
+          line-height: 0% !important;
+          min-width: 0px !important;
+          border-right:none !important;
+          border-bottom:none !important;
+        }
         .prose table th {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+          // background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
           font-weight: 600 !important;
           text-align: left !important;
           color: #374151 !important;
           font-size: 14px !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
-          border-bottom: 2px solid #e5e7eb !important;
+          // border-bottom: 1px solid #e5e7eb !important;
         }
         
         .prose table td {
