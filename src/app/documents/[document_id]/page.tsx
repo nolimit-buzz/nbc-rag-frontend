@@ -1427,7 +1427,7 @@ export default function DocumentEditorPage() {
                     </div>
 
                     {/* Document Content */}
-                    <div className="space-y-8 preview">
+                    <div className="space-y-8">
                       {sections.map((section, idx) => (
                         <motion.div
                           key={section.id}
@@ -1439,17 +1439,17 @@ export default function DocumentEditorPage() {
                         >
                           {/* Section Header with single color */}
                           <div className="mb-6">
-                            {(idx > 0) && <h2 className="text-xl font-bold mb-4 text-gray-800">
-                              {idx}. {section.title}
-                            </h2>}
+                            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                              {section.title}
+                            </h2>
                           </div>
-<div>
+
                           {/* Section Content */}
-                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }}/>
+                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
 
                           {/* Subsections */}
                           {section.subsections && section.subsections.length > 0 && (
-                            <div className="mt-8 columns-2 break-normal gap-8" style ={{wordBreak:"keep-all"}}>
+                            <div className="mt-4 columns-2 break-normal gap-8" style ={{wordBreak:"keep-all"}}>
                               {section.subsections.map((subsection, subIdx) => (
                                 <motion.div
                                   key={`${section.id}-sub-${subIdx}`}
@@ -1467,13 +1467,13 @@ export default function DocumentEditorPage() {
                               ))}
                             </div>
                           )}
-</div>
+
                           {/* Decorative element */}
-                          {idx < sections.length - 1 && (
+                          {/* {idx < sections.length - 1 && (
                             <div className="flex justify-center mt-8">
                               <div className="w-1 h-12 bg-gradient-to-b from-gray-200 to-transparent rounded-full"></div>
                             </div>
-                          )}
+                          )} */}
                         </motion.div>
                       ))}
                     </div>
