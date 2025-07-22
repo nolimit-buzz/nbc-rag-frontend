@@ -217,8 +217,8 @@ export default function DocumentCard({
                   >
                     <TrashIcon className="w-5 h-5 text-red-600" />
                     <div>
-                      <div className="font-medium text-red-600">Delete Document</div>
-                      <div className="text-sm text-red-500">Permanently delete this document</div>
+                      <div className="font-medium text-gray-700">Delete Document</div>
+                      {/* <div className="text-sm text-gray-500">Permanently delete this document</div> */}
                     </div>
                   </button>
                 )}

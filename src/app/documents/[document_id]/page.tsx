@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import dynamic from 'next/dynamic';
-import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
 import { usePDF } from 'react-to-pdf';
 import Link from "next/dist/client/link";
@@ -10,6 +10,7 @@ import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { Socket } from "@/lib/socket";
 import { Section, Collaborator, User } from "@/lib/interfaces";
+import { Flag } from '@/components/Flag';
 const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
   ssr: false,
   loading: () => <div className="hidden" />
@@ -982,7 +983,6 @@ export default function DocumentEditorPage() {
     handleDeleteDocument();
   };
 
-  // const Flag = AFRICAN_FLAGS[countryName];
   return (
     <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
@@ -994,7 +994,7 @@ export default function DocumentEditorPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#48B85C] mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading NBC Paper...</p>
+            <p className="text-gray-600">Loading  Paper...</p>
           </div>
         </div>
       )}
@@ -1020,8 +1020,14 @@ export default function DocumentEditorPage() {
         <>
           {/* Profile Header - spans full width */}
           <div>
-            <div className="w-full  overflow-y-auto flex items-center gap-4 bg-white p-6">
-              <div className="w-12 h-12 rounded-full bg-[#48B85C] flex items-center justify-center text-2xl font-extrabold text-white">NB</div>
+            <div className="w-full  overflow-y-auto flex items-center gap-8 bg-white p-6">
+              <a href="/dashboard">
+              <button className="flex items-center gap-2 text-gray-400 hover:text-[#48B85C]  p-2 rounded-lg cursor-pointer group">
+                <ArrowLeftIcon className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+                <span className="text-sm font-medium">Back</span>
+              </button>
+              </a>
+              {/* <div className="w-12 h-12 rounded-full bg-[#48B85C] flex items-center justify-center text-2xl font-extrabold text-white">NB</div> */}
               <div>
                 <div className="flex items-center gap-2">
                   {editingTitle && canEdit ? (
@@ -1422,12 +1428,10 @@ export default function DocumentEditorPage() {
                   >
                     {/* Document Header */}
                     <div className="text-center mb-12">
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-4 gap-4">
                         <h1 className="flex-1 text-3xl font-bold text-gray-900 !bg-[#476f88] !text-white p-4 rounded-lg">{countryName}</h1>
-                        <div className="w-10 h-10 ml-2">
-                          {/* <Flag /> */}
+                        <Flag countryName={countryName} />
 
-                        </div>
                       </div>
                       {/* <div className="text-gray-500 text-lg">NBC Paper</div> */}
 
