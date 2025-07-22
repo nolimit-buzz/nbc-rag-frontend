@@ -134,7 +134,7 @@ export default function DocumentCard({
 
     return (
       <div
-        key={collaborator.userId}
+        key={`${collaborator.userId}-${index}`}
         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white shadow-sm ${avatarColor}`}
         style={{ 
           marginLeft: index > 0 ? '-8px' : '0',
