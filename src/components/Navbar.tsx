@@ -81,7 +81,7 @@ export default function Navbar() {
       <div className="flex gap-10 text-gray-700 font-medium text-sm relative">
         {menuItems.map((item) => (
           <motion.div
-            key={item}
+            key={`nav-item-${item}`}
             className="relative flex items-center cursor-pointer"
             onClick={() => setActiveMenu(item)}
             whileHover={{ scale: 1.08, color: '#48B85C' }}

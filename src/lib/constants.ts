@@ -1,7 +1,7 @@
 import { DocumentTextIcon, PencilSquareIcon, ClockIcon, CheckCircleIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 import { NBCPaper } from './interfaces';
 
- const COUNTRIES = [
+const COUNTRIES = [
   'Algeria', 'Angola', 'Benin', 'Botswana', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cameroon', 'Central African Republic', 'Chad',
   'Comoros', 'Congo', 'Democratic Republic of the Congo', 'Djibouti', 'Egypt', 'Equatorial Guinea', 'Eritrea', 'Eswatini', 'Ethiopia', 'Gabon',
   'Gambia', 'Ghana', 'Guinea', 'Guinea-Bissau', 'Ivory Coast', 'Kenya', 'Lesotho', 'Liberia', 'Libya', 'Madagascar',
@@ -10,7 +10,7 @@ import { NBCPaper } from './interfaces';
   'Tunisia', 'Uganda', 'Zambia', 'Zimbabwe'
 ];
 
-  const sidebarGroups = [
+const sidebarGroups = [
     { name: 'All Papers', icon: DocumentTextIcon },
     { name: 'Drafts', icon: PencilSquareIcon },
     { name: 'Pending Review', icon: ClockIcon },
@@ -60,4 +60,61 @@ import { NBCPaper } from './interfaces';
       badgeTextColor: 'rgba(55, 65, 81, 0.8)'
     } 
   ]
-  export { COUNTRIES, sidebarGroups, getStatCards };
+ const AFRICAN_COUNTRY_CODES = {
+    "Algeria": "dz",
+    "Angola": "ao",
+    "Benin": "bj",
+    "Botswana": "bw",
+    "Burkina Faso": "bf",
+    "Burundi": "bi",
+    "Cabo Verde": "cv",
+    "Cameroon": "cm",
+    "Central African Republic": "cf",
+    "Chad": "td",
+    "Comoros": "km",
+    "Congo (Brazzaville)": "cg",
+    "Congo (Kinshasa)": "cd",
+    "Cote d'Ivoire": "ci",
+    "Djibouti": "dj",
+    "Egypt": "eg",
+    "Equatorial Guinea": "gq",
+    "Eritrea": "er",
+    "Eswatini": "sz",
+    "Ethiopia": "et",
+    "Gabon": "ga",
+    "Gambia": "gm",
+    "Ghana": "gh",
+    "Guinea": "gn",
+    "Guinea-Bissau": "gw",
+    "Kenya": "ke",
+    "Lesotho": "ls",
+    "Liberia": "lr",
+    "Libya": "ly",
+    "Madagascar": "mg",
+    "Malawi": "mw",
+    "Mali": "ml",
+    "Mauritania": "mr",
+    "Mauritius": "mu",
+    "Morocco": "ma",
+    "Mozambique": "mz",
+    "Namibia": "na",
+    "Niger": "ne",
+    "Nigeria": "ng",
+    "Rwanda": "rw",
+    "Sao Tome and Principe": "st",
+    "Senegal": "sn",
+    "Seychelles": "sc",
+    "Sierra Leone": "sl",
+    "Somalia": "so",
+    "South Africa": "za",
+    "South Sudan": "ss",
+    "Sudan": "sd",
+    "Tanzania": "tz",
+    "Togo": "tg",
+    "Tunisia": "tn",
+    "Uganda": "ug",
+    "Zambia": "zm",
+    "Zimbabwe": "zw",
+  }
+  
+  export { COUNTRIES, sidebarGroups, getStatCards, AFRICAN_COUNTRY_CODES};

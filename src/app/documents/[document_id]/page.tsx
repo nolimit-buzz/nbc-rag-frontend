@@ -205,7 +205,7 @@ export default function DocumentEditorPage() {
             } else if (accessLevel === 'can_view') {
               showNotification('You have view-only access to this document.', 'info');
             }
-          }, 1000);
+          }, 500);
         }
 
         // Convert API response to sections format - handle new structure with content object
@@ -982,6 +982,7 @@ export default function DocumentEditorPage() {
     handleDeleteDocument();
   };
 
+  // const Flag = AFRICAN_FLAGS[countryName];
   return (
     <div className="h-screen overflow-y-hidden bg-[#ffffff]">
       {/* Navbar */}
@@ -1076,9 +1077,9 @@ export default function DocumentEditorPage() {
                   )}
                   {/* User Access Level Indicator */}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${userAccessLevel === 'owner' ? 'bg-purple-100 text-purple-800' :
-                      userAccessLevel === 'can_edit' ? 'bg-blue-100 text-blue-800' :
-                        userAccessLevel === 'can_view' ? 'bg-green-100 text-green-800' :
-                          'bg-gray-100 text-gray-800'
+                    userAccessLevel === 'can_edit' ? 'bg-blue-100 text-blue-800' :
+                      userAccessLevel === 'can_view' ? 'bg-green-100 text-green-800' :
+                        'bg-gray-100 text-gray-800'
                     }`}>
                     {userAccessLevel === 'owner' ? 'Owner' :
                       userAccessLevel === 'can_edit' ? 'Editor' :
@@ -1421,9 +1422,15 @@ export default function DocumentEditorPage() {
                   >
                     {/* Document Header */}
                     <div className="text-center mb-12">
-                      <h1 className="text-3xl font-bold text-gray-900 mb-4">{titleInput}</h1>
-                      <div className="text-gray-500 text-lg">NBC Paper</div>
-                     
+                      <div className="flex items-center justify-between mb-4">
+                        <h1 className="flex-1 text-3xl font-bold text-gray-900 !bg-[#476f88] !text-white p-4 rounded-lg">{countryName}</h1>
+                        <div className="w-10 h-10 ml-2">
+                          {/* <Flag /> */}
+
+                        </div>
+                      </div>
+                      {/* <div className="text-gray-500 text-lg">NBC Paper</div> */}
+
                     </div>
 
                     {/* Document Content */}
@@ -1438,18 +1445,22 @@ export default function DocumentEditorPage() {
                           className="relative"
                         >
                           {/* Section Header with single color */}
-                          <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                          {idx > 0 ? <div className="mb-6">
+                            <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
                               {section.title}
                             </h2>
-                          </div>
+                          </div> : <div className="mb-4">
+                            <h2 className="text-2xl font-bold !text-[#476f88] text-center ">
+                              {year} at a Glance
+                            </h2>
+                          </div>}
 
                           {/* Section Content */}
-                          <div className="text-gray-700 text-sm prose max-w-none" dangerouslySetInnerHTML={{ __html: section.content }} />
+                          <div className={`text-gray-700 text-sm prose max-w-none ${idx > 0 ? '' : '!bg-[#FFF7ED] p-4 rounded-lg'}`} dangerouslySetInnerHTML={{ __html: section.content }} />
 
                           {/* Subsections */}
                           {section.subsections && section.subsections.length > 0 && (
-                            <div className="mt-4 columns-2 break-normal gap-8" style ={{wordBreak:"keep-all"}}>
+                            <div className="mt-4 columns-2 break-normal gap-8" style={{ wordBreak: "keep-all" }}>
                               {section.subsections.map((subsection, subIdx) => (
                                 <motion.div
                                   key={`${section.id}-sub-${subIdx}`}
@@ -1459,21 +1470,14 @@ export default function DocumentEditorPage() {
                                   transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
                                   className="mb-6"
                                 >
-                                  <h3 className="text-lg font-semibold text-gray-800">
+                                  <h3 className="text-lg font-semibold !text-[#476f88]">
                                     {subsection.title}
                                   </h3>
-                                  <div style={{wordBreak:"keep-all", marginTop: "0 !important"}} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                  <div style={{ wordBreak: "keep-all", marginTop: "0 !important" }} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
                                 </motion.div>
                               ))}
                             </div>
                           )}
-
-                          {/* Decorative element */}
-                          {/* {idx < sections.length - 1 && (
-                            <div className="flex justify-center mt-8">
-                              <div className="w-1 h-12 bg-gradient-to-b from-gray-200 to-transparent rounded-full"></div>
-                            </div>
-                          )} */}
                         </motion.div>
                       ))}
                     </div>
@@ -1579,7 +1583,7 @@ export default function DocumentEditorPage() {
                               </div>
                             )}
                             <div className={regeneratingSection === section.id ? 'pointer-events-none opacity-50' : ''}>
-                              <TiptapEditor content={editContent} onChange={setEditContent} roomName={`${documentId}-${getSectionKey(section.title)}`}/>
+                              <TiptapEditor content={editContent} onChange={setEditContent} roomName={`${documentId}-${getSectionKey(section.title)}`} />
                             </div>
                           </motion.div>
                         ) : (
@@ -1699,13 +1703,13 @@ export default function DocumentEditorPage() {
         </>
       )}
 
-<style jsx global>{`
+      <style jsx global>{`
         /* PDF Generation - Comprehensive color function overrides */
         .pdf-target,
         .pdf-target * {
           /* Override all modern color functions with standard colors */
           color: #000000 !important;
-          background-color: #ffffff !important;
+          // background: none !important;
           border-color: #e5e7eb !important;
           outline-color: #000000 !important;
           fill: #000000 !important;
@@ -1816,7 +1820,7 @@ export default function DocumentEditorPage() {
         .pdf-target *::after {
           /* Reset all color-related properties */
           color: #000000 !important;
-          background-color: #ffffff !important;
+          // background: none !important;
           border-color: #e5e7eb !important;
           outline-color: #000000 !important;
           fill: #000000 !important;
@@ -1873,13 +1877,18 @@ export default function DocumentEditorPage() {
           break-inside: avoid !important;
           margin-bottom: 1em !important;
         }
-        
+        .pdf-target ul li strong{
+          color: #476f88 !important;
+        }
         /* Ensure proper spacing */
         .pdf-target {
           padding: 20px !important;
           line-height: 1.6 !important;
           font-size: 14px !important;
         }
+          .pdf-target table th{
+            color: #476f88 !important;
+          }
         
         /* Table and List Styles for View Mode */
         .prose table {
@@ -1898,10 +1907,12 @@ export default function DocumentEditorPage() {
             border:none !important;
             border-collapse:collapse !important;
             width: max-content !important;
+            background: none !important;
           }
         
         .prose table td,
         .prose table th {
+        //  color: #476f88 !important;
           border-bottom: 1px solid #e5e7eb !important;
           border-right: 1px solid #e5e7eb !important;
           box-sizing: border-box !important;
@@ -1919,12 +1930,13 @@ export default function DocumentEditorPage() {
           min-width: 0px !important;
           border-right:none !important;
           border-bottom:none !important;
+          // background: none !important;
         }
         .prose table th {
           // background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
           font-weight: 600 !important;
           text-align: left !important;
-          color: #374151 !important;
+          // color: #476f88 !important;
           font-size: 14px !important;
           text-transform: uppercase !important;
           letter-spacing: 0.05em !important;
@@ -1932,7 +1944,8 @@ export default function DocumentEditorPage() {
         }
         
         .prose table td {
-          background-color: white !important;
+        // background: none !important;
+          background-color: transparent !important;
           color: #4b5563 !important;
         }
         
@@ -1952,6 +1965,7 @@ export default function DocumentEditorPage() {
         
         .prose table p {
           margin: 0 !important;
+          // background: none !important;
         }
         
         /* List Styles for View Mode */
@@ -1967,7 +1981,7 @@ export default function DocumentEditorPage() {
           margin: 0.5em 0 !important;
           line-height: 1.6 !important;
         }
-        
+       
         .prose ol {
           list-style-type: decimal !important;
           padding-left: 1.5em !important;
@@ -2034,6 +2048,20 @@ export default function DocumentEditorPage() {
         .pdf-target ol ol {
           padding-left: 1.5em !important;
           margin: 0.5em 0 !important;
+        }
+
+        .pdf-target, .pdf-target * {
+          word-break: break-word !important;
+          overflow-wrap: break-word !important;
+          max-width: 100% !important;
+          overflow: visible !important;
+          overflow-x: visible !important;
+          width: auto !important;
+        }
+
+        .pdf-target [style*="width"] {
+          width: auto !important;
+          max-width: 100% !important;
         }
       `}</style>
 
