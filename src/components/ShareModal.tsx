@@ -1,7 +1,7 @@
   'use client';
-  import { useState, useEffect, useCallback } from 'react';
+  import { useState, useEffect } from 'react';
   import { motion } from 'framer-motion';
-  import { DocumentTextIcon, XMarkIcon, UserGroupIcon, LinkIcon } from '@heroicons/react/24/outline';
+  import { DocumentTextIcon, XMarkIcon, UserGroupIcon } from '@heroicons/react/24/outline';
   import { MultiSelect } from '@/components/ui/multi-select';
   import { Collaborator } from '@/lib/interfaces';
   interface User {
@@ -36,34 +36,34 @@
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     // const [selectedTab, setSelectedTab] = useState<'team' | 'channel' | 'guests'>('team');
-    const [inviteLink, setInviteLink] = useState('');
+    // const [inviteLink, setInviteLink] = useState('');
     const [isInviting, setIsInviting] = useState(false);
     const [inviteStatus, setInviteStatus] = useState<string>('');
     const [selectedRole, setSelectedRole] = useState<string>('can_view');
       const [query, setQuery] = useState<string>('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const generateInviteLink = useCallback(() => {
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/documents/${documentId}?type=${documentType === 'NbcPaper' ? 'nbc' : 'market'}&shared=true`;
-    setInviteLink(link);
-  }, [documentId, documentType]);
+      // const generateInviteLink = useCallback(() => {
+      //   const baseUrl = window.location.origin;
+    // const link = `${baseUrl}/documents/${documentId}?type=${documentType === 'NbcPaper' ? 'nbc' : 'market'}&shared=true`;
+    // setInviteLink(link);
+  // }, [documentId, documentType]);
 
-  const copyInviteLink = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      alert('Link copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy link:', err);
-    }
-  };
+  // const copyInviteLink = async () => {
+  //   try {
+  //     await navigator.clipboard.writeText(inviteLink);
+  //     alert('Link copied to clipboard!');
+  //   } catch (err) {
+  //     console.error('Failed to copy link:', err);
+  //   }
+  // };
   // Fetch users when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
-      generateInviteLink();
+      // generateInviteLink();
     }
-  }, [isOpen, documentId, generateInviteLink]);
+  }, [isOpen, documentId]);
 
   useEffect(() => {
     if (searchTimeout) {
@@ -240,7 +240,7 @@
           {/* Content */}
           <div className="p-6 overflow-y-hidden h-[400px]">
             {/* Invite Link Section */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
               <h3 className="text-white font-medium mb-2">Invite Link</h3>
               <p className="text-gray-400 text-sm mb-4">
                 Share this secret link to invite people to this document. Only team admins can see this.
@@ -261,7 +261,7 @@
                   Copy
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Team Section */}
             <div>

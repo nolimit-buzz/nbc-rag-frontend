@@ -41,7 +41,7 @@ export default function DeleteModal({
         </DialogHeader>
         <DialogFooter>
           <button
-            className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold"
+            className="cursor-pointer px-4 py-2 rounded bg-gray-600 text-white border border-gray-200 font-semibold transition-all duration-300 hover:bg-transparent hover:text-gray-600"
             onClick={onClose}
             type="button"
             disabled={isLoading}
@@ -49,7 +49,7 @@ export default function DeleteModal({
             {cancelText}
           </button>
           <button
-            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 font-semibold flex items-center justify-center min-w-[90px]"
+            className="cursor-pointer px-4 py-2 rounded text-red-600 border border-red-600 hover:text-white hover:bg-red-700 font-semibold flex items-center justify-center min-w-[90px] transition-all duration-300"
             onClick={onConfirm}
             type="button"
             disabled={isLoading}

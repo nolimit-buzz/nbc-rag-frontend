@@ -203,21 +203,21 @@ export default function DocumentCard({
                     onClick={handleShareClick}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer"
                   >
-                    <ShareIcon className="w-5 h-5 text-blue-600" />
+                    <ShareIcon className="w-5 h-5 text-gray-700" />
                     <div>
-                      <div className="font-medium text-gray-900">Share</div>
+                      <div className="font-medium text-gray-700">Share</div>
                     </div>
                   </button>
                 )}
-                
+                <div className="border-b border-gray-100 mx-2"></div>
                 {onDelete && (
                   <button
                     onClick={handleDeleteClick}
-                    className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600 cursor-pointer"
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer"
                   >
-                    <TrashIcon className="w-5 h-5 text-red-600" />
+                    <TrashIcon className="w-5 h-5 text-gray-600" />
                     <div>
-                      <div className="font-medium text-gray-700">Delete Document</div>
+                      <div className="font-medium text-gray-600">Delete Document</div>
                       {/* <div className="text-sm text-gray-500">Permanently delete this document</div> */}
                     </div>
                   </button>
