@@ -1427,7 +1427,7 @@ export default function DocumentEditorPage() {
                     }}
                   >
                     {/* Document Header */}
-                    <div className="text-center mb-12">
+                    {documentType === "market" && <div className="text-center mb-12">
                       <div className="flex items-center justify-between mb-4 gap-4">
                         <h1 className="flex-1 text-3xl font-bold text-gray-900 !bg-[#476f88] !text-white p-4 rounded-lg">{countryName}</h1>
                         <Flag countryName={countryName} />
@@ -1435,7 +1435,7 @@ export default function DocumentEditorPage() {
                       </div>
                       {/* <div className="text-gray-500 text-lg">NBC Paper</div> */}
 
-                    </div>
+                    </div>}
 
                     {/* Document Content */}
                     <div className="space-y-8">
@@ -1449,15 +1449,17 @@ export default function DocumentEditorPage() {
                           className="relative"
                         >
                           {/* Section Header with single color */}
-                          {idx > 0 ? <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
-                              {section.title}
+                          {idx === 0 ? documentType === "nbc" ? <div className="mb-6">
+                            <h2 className="text-2xl font-bold mb-4 !text-[#476f88] text-center">
+                              New Business Committee Paper
                             </h2>
-                          </div> : <div className="mb-4">
+                          </div> : documentType === "market" ? <div className="mb-4">
                             <h2 className="text-2xl font-bold !text-[#476f88] text-center ">
                               {year} at a Glance
                             </h2>
-                          </div>}
+                          </div>: <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
+                            {section.title}
+                          </h2> : null}
 
                           {/* Section Content */}
                           <div className={`text-gray-700 text-sm prose max-w-none ${idx > 0 ? '' : '!bg-[#FFF7ED] p-4 rounded-lg'}`} dangerouslySetInnerHTML={{ __html: section.content }} />
@@ -1907,7 +1909,7 @@ export default function DocumentEditorPage() {
           border-radius: 12px !important;
           background: white !important;
         }
-        .prose table:first-child{
+        .pdf-target table:first-of-type{
             border:none !important;
             border-collapse:collapse !important;
             width: max-content !important;

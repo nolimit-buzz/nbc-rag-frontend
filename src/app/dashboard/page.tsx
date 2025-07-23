@@ -55,7 +55,7 @@
           }
 
           const data = await response.json();
-          setNbcPapers(data || []);
+          setNbcPapers(data.reverse() || []);
 
         } catch (err: unknown) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';

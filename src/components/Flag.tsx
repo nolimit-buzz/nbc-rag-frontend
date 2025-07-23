@@ -1,7 +1,7 @@
 // components/Flag.tsx
 
 const AFRICAN_COUNTRY_CODES: Record<string, string> = {
-    Algeria: "dz", Angola: "ao", Benin: "bj", Botswana: "bw", BurkinaFaso: "bf",
+    Algeria: "dz", Angola: "ao", Benin: "bj", Botswana: "bw", "Burkina Faso": "bf",
     Burundi: "bi", CaboVerde: "cv", Cameroon: "cm", "Central African Republic": "cf",
     Chad: "td", Comoros: "km", "Congo (Brazzaville)": "cg", "Congo (Kinshasa)": "cd",
     "Cote d'Ivoire": "ci", Djibouti: "dj", Egypt: "eg", "Equatorial Guinea": "gq",
