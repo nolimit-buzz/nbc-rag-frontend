@@ -102,7 +102,7 @@ function NewDocumentForm() {
   const [isCreating, setIsCreating] = useState(false);
   const [creationStatus, setCreationStatus] = useState<string>('');
   const [documentType, setDocumentType] = useState<string>('nbc');
-  const [marketForm, setMarketForm] = useState({ countryName: '' });
+  const [marketForm, setMarketForm] = useState({ countryName: '' ,year: ''});
   const [marketErrors, setMarketErrors] = useState<{ countryName?: string }>({});
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -158,9 +158,11 @@ function NewDocumentForm() {
   };
 
   const validateMarketForm = () => {
-    const newErrors: { countryName?: string } = {};
+    const newErrors: { countryName?: string, year?: string } = {};
     if (!marketForm.countryName.trim()) {
       newErrors.countryName = 'Country is required';
+    } else if (!marketForm.year.trim()) {
+      newErrors.year = 'Year is required';
     }
     setMarketErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -230,6 +232,7 @@ function NewDocumentForm() {
       if (documentType === 'market') {
         body = {
           countryName: marketForm.countryName,
+          year: marketForm.year,
         };
         endpoint = `${process.env.NEXT_PUBLIC_API_URL}/market-reports/create`;
       } else {
@@ -477,8 +480,21 @@ function NewDocumentForm() {
                             <option key={country} value={country}>{country}</option>
                           ))}
                         </select>
+
                         {marketErrors.countryName && <div className="text-red-500 text-sm mt-1">{marketErrors.countryName}</div>}
                       </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-1">Year</label>
+                        <input
+                          type="number"
+                          name="year"
+                          value={marketForm.year}
+                          onChange={handleMarketChange}
+                          className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-[#48B85C] text-gray-800"
+                        />
+                        {/* {marketErrors.year && <div className="text-red-500 text-sm mt-1">{marketErrors.year}</div>} */}
+                      </div>
+                      
                       
                       {/* Submit button for market report */}
                       {submitError && <div className="text-red-500 text-sm mb-4">{submitError}</div>}

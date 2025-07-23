@@ -1157,7 +1157,7 @@ export default function DocumentEditorPage() {
                 <div className="relative z-[9999]">
                   <button
                     onClick={() => setShowMenu(!showMenu)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     <EllipsisVerticalIcon className="w-5 h-5 text-gray-600" />
                   </button>
@@ -1175,7 +1175,7 @@ export default function DocumentEditorPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="fixed top-40 right-8 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
+                className="fixed top-48 right-8 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
               >
                 {/* Mark as Ready Option */}
                 {status === 'draft' && !isSubmitting && canEdit && (
@@ -1184,7 +1184,7 @@ export default function DocumentEditorPage() {
                       setShowMenu(false);
                       handleMarkAsReady();
                     }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    className="cursor-pointer w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
                   >
                     <CheckIcon className="w-5 h-5 text-green-600" />
                     <div>
@@ -1201,7 +1201,7 @@ export default function DocumentEditorPage() {
                       setShowMenu(false);
                       handleSubmitForApproval();
                     }}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    className="cursor-pointer w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
                   >
                     <PaperAirplaneIcon className="w-5 h-5 text-purple-600" />
                     <div>
@@ -1239,7 +1239,7 @@ export default function DocumentEditorPage() {
                     setShowMenu(false);
                     handleDownloadPDF();
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  className="cursor-pointer w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <ArrowDownTrayIcon className="w-5 h-5 text-blue-600" />
                   <div>
@@ -1258,7 +1258,7 @@ export default function DocumentEditorPage() {
                       setShowMenu(false);
                       setShowDeleteDialog(true);
                     }}
-                    className="w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
+                    className="cursor-pointer w-full px-4 py-3 text-left hover:bg-red-50 transition-colors flex items-center gap-3 text-red-600"
                   >
                     <TrashIcon className="w-5 h-5 text-red-600" />
                     <div>
@@ -1270,12 +1270,12 @@ export default function DocumentEditorPage() {
 
                 {/* New NBC Paper Option */}
                 <Link
-                  href="/documents/new"
+                  href={`/documents/new?type=${documentType}`}
                   className="block px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <PlusIcon className="w-5 h-5 text-[#48B85C]" />
                   <div>
-                    <div className="font-medium text-gray-900">New NBC Paper</div>
+                    <div className="font-medium text-gray-900">New Business Paper</div>
                     <div className="text-sm text-gray-500">Create a new document</div>
                   </div>
                 </Link>
@@ -1449,17 +1449,17 @@ export default function DocumentEditorPage() {
                           className="relative"
                         >
                           {/* Section Header with single color */}
-                          {idx === 0 ? documentType === "nbc" ? <div className="mb-6">
+                          {idx === 0 && documentType === "nbc" ? <div className="mb-6">
                             <h2 className="text-2xl font-bold mb-4 !text-[#476f88] text-center">
                               New Business Committee Paper
                             </h2>
-                          </div> : documentType === "market" ? <div className="mb-4">
+                          </div> : idx === 0 && documentType === "market" ? <div className="mb-4">
                             <h2 className="text-2xl font-bold !text-[#476f88] text-center ">
                               {year} at a Glance
                             </h2>
                           </div>: <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
                             {section.title}
-                          </h2> : null}
+                          </h2>}
 
                           {/* Section Content */}
                           <div className={`text-gray-700 text-sm prose max-w-none ${idx > 0 ? '' : '!bg-[#FFF7ED] p-4 rounded-lg'}`} dangerouslySetInnerHTML={{ __html: section.content }} />
@@ -1909,7 +1909,7 @@ export default function DocumentEditorPage() {
           border-radius: 12px !important;
           background: white !important;
         }
-        .pdf-target table:first-of-type{
+        .prose table:first-child{
             border:none !important;
             border-collapse:collapse !important;
             width: max-content !important;
@@ -1965,7 +1965,7 @@ export default function DocumentEditorPage() {
         }
         
         .prose table tr:hover td {
-          background-color: #f9fafb !important;
+          // background-color: #f9fafb !important;
           transition: background-color 0.2s ease !important;
         }
         

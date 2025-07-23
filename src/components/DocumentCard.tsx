@@ -205,7 +205,7 @@ export default function DocumentCard({
                   >
                     <ShareIcon className="w-5 h-5 text-gray-700" />
                     <div>
-                      <div className="font-medium text-gray-700">Share</div>
+                      <div className="font-medium text-gray-700 text-[14px]">Share</div>
                     </div>
                   </button>
                 )}
@@ -217,7 +217,7 @@ export default function DocumentCard({
                   >
                     <TrashIcon className="w-5 h-5 text-gray-600" />
                     <div>
-                      <div className="font-medium text-gray-600">Delete Document</div>
+                      <div className="font-medium text-gray-600 text-[14px]">Delete Document</div>
                       {/* <div className="text-sm text-gray-500">Permanently delete this document</div> */}
                     </div>
                   </button>
