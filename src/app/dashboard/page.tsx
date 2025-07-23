@@ -55,7 +55,7 @@
           }
 
           const data = await response.json();
-          setNbcPapers(data.reverse() || []);
+          setNbcPapers(data || []);
 
         } catch (err: unknown) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';
@@ -216,7 +216,7 @@
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {console.log(nbcPapers)}
+                    {/* {console.log(nbcPapers)} */}
                     {nbcPapers.slice(0, 6).map((paper, idx) => (
                       <DocumentCard
                           key={paper._id || idx}
