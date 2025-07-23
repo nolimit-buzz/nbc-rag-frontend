@@ -302,9 +302,9 @@ export default function DocumentEditorPage() {
           case "Market Overview":
             return "market_overview";
           case "Key Strengths & Value Proposition":
-            return "key_strengths";
+            return "key_strengths_value_proposition";
           case "Critical Areas for Due Diligence":
-            return "critical_areas";
+            return "critical_areas_due_diligence";
           case "Development Impact":
             return "development_impact";
           case "Initial Risk Assessment":
@@ -395,7 +395,7 @@ export default function DocumentEditorPage() {
       case "Market Overview":
         return "market_overview";
       case "Key Strengths & Value Proposition":
-        return "key_strengths";
+        return "key_strengths_value_proposition";
       case "Critical Areas for Due Diligence":
         return "critical_areas";
       case "Development Impact":
@@ -491,7 +491,7 @@ export default function DocumentEditorPage() {
           case "Market Overview":
             return "market_overview";
           case "Key Strengths & Value Proposition":
-            return "key_strengths";
+            return "key_strengths_value_proposition";
           case "Critical Areas for Due Diligence":
             return "critical_areas";
           case "Development Impact":
