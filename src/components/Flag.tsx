@@ -21,10 +21,10 @@ const AFRICAN_COUNTRY_CODES: Record<string, string> = {
       .replace(/./g, (char) => String.fromCodePoint(char.charCodeAt(0) + 127397));
   }
   
-  export const Flag = ({ countryName }: { countryName: string }) => {
+  export const getFlag = ( countryName : string ) => {
     const code = AFRICAN_COUNTRY_CODES[countryName];
     if (!code) return <span>🌍</span>;
   
-    return <span style={{ fontSize: '5rem' }}>{isoToEmoji(code)}</span>;
+    return isoToEmoji(code)
   };
   

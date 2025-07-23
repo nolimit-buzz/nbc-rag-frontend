@@ -10,7 +10,7 @@ import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { Socket } from "@/lib/socket";
 import { Section, Collaborator, User } from "@/lib/interfaces";
-import { Flag } from '@/components/Flag';
+import { getFlag } from '@/components/Flag';
 const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
   ssr: false,
   loading: () => <div className="hidden" />
@@ -1427,12 +1427,19 @@ export default function DocumentEditorPage() {
                     }}
                   >
                     {/* Document Header */}
-                    {documentType === "market" && <div className="text-center mb-12">
-                      <div className="flex items-center justify-between mb-4 gap-4">
-                        <h1 className="flex-1 text-3xl font-bold text-gray-900 !bg-[#476f88] !text-white p-4 rounded-lg">{countryName}</h1>
-                        <Flag countryName={countryName} />
-
-                      </div>
+                    {documentType === "market" && <div className="text-center mb-12" id="header">
+                      <table className="w-full mb-4" style={{ borderCollapse: 'collapse' }}>
+                        <tbody>
+                          <tr className="!h-[80px]">
+                            <td className="!h-[80px] text-left text-3xl font-bold text-gray-900 !bg-[#476f88] !text-white rounded-lg" style={{ width: '85%' }}>
+                              {countryName}
+                            </td>
+                            <td className="text-center text-5xl" >
+                              {getFlag(countryName)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                       {/* <div className="text-gray-500 text-lg">NBC Paper</div> */}
 
                     </div>}
@@ -2068,6 +2075,32 @@ export default function DocumentEditorPage() {
         .pdf-target [style*="width"] {
           width: auto !important;
           max-width: 100% !important;
+        }
+
+          /* Document header table styles for PDF */
+        #header table {
+          border-collapse: collapse !important;
+          width: 100% !important;
+          margin-bottom: 1rem !important;
+        }
+        
+        #header  table td {
+          // border: none !important;
+          padding: 0 !important;
+          vertical-align: middle !important;
+        }
+        
+        #header table td:first-child {
+          width: 85% !important;
+          padding: 0 10px !important;
+          vertical-align: middle !important;
+          text-align: left !important;
+        }
+        
+        #header table td:last-child {
+          vertical-align: middle !important;
+          width: 15% !important;
+          text-align: center !important;
         }
       `}</style>
 
