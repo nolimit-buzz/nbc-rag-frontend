@@ -8,7 +8,9 @@
   import DocumentCard from '@/components/DocumentCard';
   import StatsCard from '@/components/StatsCard';
   import { NBCPaper } from '@/lib/interfaces';  
-  import { sidebarGroups, getStatCards } from '@/lib/constants';
+  import {  getStatCards, sidebarGroups } from '@/lib/constants';
+
+
   const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
     ssr: false,
     loading: () => <div className="hidden" />
@@ -55,7 +57,7 @@
           }
 
           const data = await response.json();
-          setNbcPapers(data.reverse() || []);
+          setNbcPapers(data.results.reverse() || []);
 
         } catch (err: unknown) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';
@@ -119,7 +121,7 @@
         setIsDeleting(false);
       }
     };
-
+    console.log(sidebarGroups);
     const statCards = getStatCards(nbcPapers);
     return (
       <div className="min-h-screen overflow-y-hidden bg-[#ffffff] flex flex-col">
@@ -132,13 +134,14 @@
             <nav className="flex flex-col gap-2">
               <div className="mb-6 text-xs text-gray-400 uppercase tracking-widest pl-2">Documents</div>
               {sidebarGroups.map((group) => (
-                <button
+                <Link
                   key={group.name}
+                  href={group.link}
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg font-medium hover:bg-[#48B85C]/10 transition text-gray-700`}
                 >
                   <group.icon className="w-5 h-5" />
                   {group.name}
-                </button>
+                </Link>
               ))}
             </nav>
             <div className="mt-auto pt-8">

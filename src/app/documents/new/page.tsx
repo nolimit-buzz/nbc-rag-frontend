@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {  DocumentTextIcon, ArchiveBoxIcon, CheckCircleIcon, ClockIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import { COUNTRIES as countries } from "@/lib/constants";
-
+import { sidebarGroups } from "@/lib/constants";
 // SDG Goals data
 const SDG_GOALS = [
   { number: 1, title: "No Poverty" },
@@ -78,14 +77,14 @@ const initialForm: FormData = {
   dueDiligenceFlags: ["No Poverty"]
 };
 
-const sidebarGroups = [
-  { name: 'All Papers', icon: DocumentTextIcon },
-  { name: 'Drafts', icon: PencilSquareIcon },
-  { name: 'Pending Review', icon: ClockIcon },
-  { name: 'Approved', icon: CheckCircleIcon },
-  { name: 'Archived', icon: ArchiveBoxIcon },
-  { name: 'Templates', icon: DocumentTextIcon },
-];
+// const sidebarGroups = [
+//   { name: 'All Papers', icon: DocumentTextIcon },
+//   { name: 'Drafts', icon: PencilSquareIcon },
+//   { name: 'Pending Review', icon: ClockIcon },
+//   { name: 'Approved', icon: CheckCircleIcon },
+//   { name: 'Archived', icon: ArchiveBoxIcon },
+//   { name: 'Templates', icon: DocumentTextIcon },
+// ];
 
 export default function NewNBCPaper() {
   return (

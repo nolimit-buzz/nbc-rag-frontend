@@ -72,7 +72,7 @@ export default function Navbar() {
   }, [isDropdownOpen]);
 
   return (
-    <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center px-8">
+    <nav className="top-0 left-0 right-0 z-30 h-26 bg-gray-50 shadow-sm flex items-center justify-between px-8">
       <Link href="/dashboard">
         <div className="flex items-center gap-2 mr-32">
           <Image src="/logo.svg" alt="DigiCred Logo" width={120} height={100} className="w-40 h-auto" />
@@ -98,13 +98,6 @@ export default function Navbar() {
             </Link>
           </motion.div>
         ))}
-      </div>
-      <div className="flex-1 flex justify-center">
-        <input
-          type="text"
-          placeholder="Search for an NBC Paper by Name..."
-          className="w-[340px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#48B85C]"
-        />
       </div>
       <div className="flex items-center gap-4 ml-8">
         <span className="text-gray-700 text-sm">

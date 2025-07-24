@@ -46,4 +46,18 @@ interface NBCPaper {
     lastName?: string;
     role?: string;
   }
-  export type { NBCPaper, User, Section, Subsection, Collaborator };
+  interface Paper {
+    _id: string;
+    entityId: string;
+    entityType: string;
+    metadata: {
+        title: string;
+        author: string;
+        status: string;
+        createdAt: string;
+        updatedAt: string;
+    };
+    collaborators?: any[];
+}
+
+  export type { NBCPaper, User, Section, Subsection, Collaborator, Paper };

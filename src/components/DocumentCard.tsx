@@ -82,7 +82,7 @@ export default function DocumentCard({
       return { background: 'rgba(34, 197, 94, 0.4)', color: '#166534' };
     } else if (status === 'review' || status === 'pending') {
       return { background: 'rgba(251, 191, 36, 0.4)', color: '#92400e' };
-    } else if (status === 'ready for review') {
+    } else if (status === 'pending_review') {
       return { background: 'rgba(63, 167, 209, 0.4)', color: '#23406c' };
     } else {
       return { background: 'rgba(156, 163, 175, 0.4)', color: '#374151' };
@@ -169,10 +169,10 @@ export default function DocumentCard({
       <div className="flex items-start justify-between mb-2">
         {/* Status badge */}
         <span 
-          className="px-3 py-1 rounded-lg text-xs font-semibold"
+          className="px-3 py-1 rounded-lg text-xs font-semibold capitalize"
           style={statusStyle}
         >
-          {document.metadata.status ? document.metadata.status.charAt(0).toUpperCase() + document.metadata.status.slice(1) : 'draft'}
+          {document.metadata.status ? document.metadata.status.replace('_', ' ') : 'draft'}
         </span>
         
         {/* Three-dot menu */}

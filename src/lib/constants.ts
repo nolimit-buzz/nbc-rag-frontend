@@ -11,12 +11,12 @@ const COUNTRIES = [
 ];
 
 const sidebarGroups = [
-    { name: 'All Papers', icon: DocumentTextIcon },
-    { name: 'Drafts', icon: PencilSquareIcon },
-    { name: 'Pending Review', icon: ClockIcon },
-    { name: 'Approved', icon: CheckCircleIcon },
-    { name: 'Archived', icon: ArchiveBoxIcon },
-    { name: 'Templates', icon: DocumentTextIcon },
+    { name: 'All Papers', icon: DocumentTextIcon, link: '/dashboard/papers/all' },
+    { name: 'Drafts', icon: PencilSquareIcon, link: '/dashboard/papers/drafts' },
+    { name: 'Pending Review', icon: ClockIcon, link: '/dashboard/papers/pending-review' },
+    { name: 'Approved', icon: CheckCircleIcon, link: '/dashboard/papers/approved' },
+    { name: 'Archived', icon: ArchiveBoxIcon, link: '/dashboard/papers/archived' },
+    { name: 'Templates', icon: DocumentTextIcon, link: '/dashboard/templates' },
   ];
   const getStatCards = (nbcPapers: NBCPaper[]) => [
     {

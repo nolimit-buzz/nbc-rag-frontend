@@ -658,7 +658,7 @@ export default function DocumentEditorPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({
-          status: 'ready for review',
+          status: 'pending_review',
           updatedAt: new Date().toISOString()
         })
       });
@@ -672,7 +672,7 @@ export default function DocumentEditorPage() {
       setSubmitStatus('Successfully marked as ready!');
 
       // Update local status
-      setStatus('ready for review');
+      setStatus('pending_review');
 
       // Show success message
       setTimeout(() => {
@@ -1021,13 +1021,12 @@ export default function DocumentEditorPage() {
           {/* Profile Header - spans full width */}
           <div>
             <div className="w-full  overflow-y-auto flex items-center gap-8 bg-white p-6">
-              <a href="/dashboard">
-              <button className="flex items-center gap-2 text-gray-400 hover:text-[#48B85C]  p-2 rounded-lg cursor-pointer group">
+              
+              <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-[#48B85C]  p-2 rounded-lg cursor-pointer group">
                 <ArrowLeftIcon className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
                 <span className="text-sm font-medium">Back</span>
               </button>
-              </a>
-              {/* <div className="w-12 h-12 rounded-full bg-[#48B85C] flex items-center justify-center text-2xl font-extrabold text-white">NB</div> */}
+              
               <div>
                 <div className="flex items-center gap-2">
                   {editingTitle && canEdit ? (
@@ -1073,12 +1072,12 @@ export default function DocumentEditorPage() {
                   {author && <span>Author: {author}</span>}
                   {status && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${status === 'draft' ? 'bg-[#1454D5] text-white' :
-                      status === 'ready for review' ? 'bg-yellow-100 text-yellow-800' :
+                      status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
                         status === 'published' ? 'bg-green-100 text-green-800' :
                           status === 'review' ? 'bg-blue-100 text-blue-800' :
                             'bg-gray-100 text-gray-800'
                       }`}>
-                      {status === 'ready for review' ? 'Ready for Review' : status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status === 'pending_review' ? 'Ready for Review' : status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
                   )}
                   {/* User Access Level Indicator */}
@@ -1195,7 +1194,7 @@ export default function DocumentEditorPage() {
                 )}
 
                 {/* Submit for Approval Option */}
-                {status === 'ready for review' && !isSubmitting && canEdit && (
+                {status === 'pending_review' && !isSubmitting && canEdit && (
                   <button
                     onClick={() => {
                       setShowMenu(false);
@@ -1493,17 +1492,6 @@ export default function DocumentEditorPage() {
                           )}
                         </motion.div>
                       ))}
-                    </div>
-
-                    {/* Document Footer */}
-                    <div className="mt-20 pt-8 border-t border-gray-200 text-center">
-                      <div className="text-gray-500 text-sm">
-                        Generated on {new Date().toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </div>
                     </div>
                   </div>
                 ) : (
