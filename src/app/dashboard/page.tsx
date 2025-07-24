@@ -197,7 +197,7 @@
                   <h2 className="text-xl font-semibold text-gray-700">Recent Papers</h2>
                   {nbcPapers.length > 6 && (
                     <Link
-                      href="/archive"
+                      href="/dashboard/papers/all"
                       className="text-[#48B85C] hover:text-[#3da050] font-medium text-sm transition-colors"
                     >
                       View All Papers →
