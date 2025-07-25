@@ -41,7 +41,7 @@ export default function AllPapersPage() {
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
-    const PAGE_SIZE = 12;
+    const PAGE_SIZE = 10;
     const [openDropdownRow, setOpenDropdownRow] = useState<string | null>(null);
     // const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
     const router = useRouter();
@@ -74,6 +74,7 @@ export default function AllPapersPage() {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: PAGE_SIZE.toString(),
+                skip: ((page - 1) * PAGE_SIZE).toString(),
                 ...(searchTerm && { search: searchTerm }),
                 ...(selectedType !== 'all' && { documentType: selectedType }),
                 ...(selectedStatus !== 'all' && { status: selectedStatus }),
