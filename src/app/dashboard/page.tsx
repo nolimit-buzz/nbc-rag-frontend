@@ -43,33 +43,32 @@
       return false;
     }, [router]);
     // Fetch all NBC papers
-    useEffect(() => {
-      const fetchNbcPapers = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const accessToken = localStorage.getItem('accessToken');
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-          handleUnauthorized(response);
+    const fetchPapers = useCallback(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const accessToken = localStorage.getItem('accessToken');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+        handleUnauthorized(response);
 
-          if (!response.ok) {
-            throw new Error(`Failed to fetch NBC papers: ${response.status}`);
-          }
-
-          const data = await response.json();
-          setNbcPapers(data.results.reverse() || []);
-
-        } catch (err: unknown) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';
-          setError(errorMessage);
-          console.error('Error fetching NBC papers:', err);
-        } finally {
-          setLoading(false);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch NBC papers: ${response.status}`);
         }
-      };
 
-      fetchNbcPapers();
+        const data = await response.json();
+        setNbcPapers(data.results.reverse() || []);
+
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch NBC papers';
+        setError(errorMessage);
+        console.error('Error fetching NBC papers:', err);
+      } finally {
+        setLoading(false);
+      }
     }, [handleUnauthorized]);
+    useEffect(() => {
+      fetchPapers();
+    }, [handleUnauthorized, fetchPapers]);
 
 
 
@@ -239,6 +238,9 @@
         {/* Share Modal */}
         {selectedPaper && (
           <ShareModal
+            onInviteSuccess={() => {
+              fetchPapers();
+            }}
             collaborators={selectedPaper.collaborators}
             isOpen={showShareModal && !showDeleteDialog}
             onClose={closeShareModal}

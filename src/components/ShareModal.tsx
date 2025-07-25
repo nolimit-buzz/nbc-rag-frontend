@@ -21,6 +21,7 @@
     documentType: 'NbcPaper' | 'MarketReport';
     className?: string;
     collaborators: Collaborator[];
+    onInviteSuccess?: () => void;
   }
 
   export default function ShareModal({
@@ -30,7 +31,8 @@
     documentId,
     documentType,
     className = '',
-    collaborators = []
+    collaborators = [],
+    onInviteSuccess
   }: ShareModalProps) {
     const [users, setUsers] = useState<User[]>([]);
     const [loadingUsers, setLoadingUsers] = useState(false);
@@ -116,7 +118,11 @@
         }
 
         const data = await response.json();
-        setUsers(data.users || data || []);
+        console.log("data", data)
+        const currentUser = localStorage.getItem('user');
+        const currentUserId = currentUser ? JSON.parse(currentUser).id : null;
+        const collaboratorsWithoutCurrentUser = data.filter((user: User) => user._id !== currentUserId);
+        setUsers(collaboratorsWithoutCurrentUser as User[]);
       } catch (err) {
         console.error('Error fetching users:', err);
       } finally {
@@ -148,7 +154,7 @@
         const accessToken = localStorage.getItem('accessToken');
 
         // Prepare invitation data
-        const invitationData = [...collaborators, ...selectedUsers.map(user => ({
+        const invitationData = [...(collaborators || []), ...selectedUsers.map(user => ({
           userId: user._id,
           email: user.email,
           role: selectedRole,
@@ -167,6 +173,11 @@
         }
 
         setInviteStatus('Invitation sent successfully!');
+
+        // Call success callback to refetch papers
+        if (onInviteSuccess) {
+          onInviteSuccess();
+        }
 
         // Reset form
         setTimeout(() => {

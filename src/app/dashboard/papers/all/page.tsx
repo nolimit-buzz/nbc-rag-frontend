@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useCallback } from 'react';
 import { FaThList, FaThLarge } from 'react-icons/fa';
-import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
@@ -103,7 +103,7 @@ export default function AllPapersPage() {
     }, [searchTerm, selectedType, selectedStatus, page, fetchPapers]);
 
 
- 
+
 
     // Share functionality
     const handleSharePaper = (paperId: string) => {
@@ -204,18 +204,26 @@ export default function AllPapersPage() {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                     >
                         {/* Header row: title and new document */}
-                        <motion.div 
+                        <motion.div
                             className="flex flex-col gap-2 mb-6"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
                         >
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-                                <h1 className="text-2xl font-bold text-gray-700">All Papers</h1>
+
+                                <div className="flex items-center gap-4">
+                                    <button className="cursor-pointer flex items-center gap-2 text-gray-500 hover:text-gray-700" onClick={() => router.back()}>
+                                        <ArrowLeftIcon className="w-4 h-4" />
+                                        <p>Back</p>
+                                    </button>
+                                    <h1 className="text-2xl font-bold text-gray-700">All Papers</h1>
+                                </div>
+                                {/* <h1 className="text-2xl font-bold text-gray-700">All Papers</h1> */}
                                 <GeneratePaperDropdown variant="main" />
                             </div>
                             {/* Second row: filters, search, view toggle */}
-                            <motion.div 
+                            <motion.div
                                 className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-4"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -382,7 +390,7 @@ export default function AllPapersPage() {
                                                                     </td>
                                                                     <td className="px-4 py-4 whitespace-nowrap text-center relative">
                                                                         <button
-                                                                            onClick={() => setOpenDropdownRow(openDropdownRow === paper._id ? null : paper._id)}
+                                                                            onClick={(e) => { e.stopPropagation(); setOpenDropdownRow(openDropdownRow === paper._id ? null : paper._id) }}
                                                                             className={`p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer`}
                                                                             aria-label="Open menu"
                                                                         >
@@ -406,48 +414,48 @@ export default function AllPapersPage() {
                                                 </table>
                                             </motion.div>
                                         ) : (
-                                          <motion.div
-                                            key="grid"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -20 }}
-                                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                                            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-                                          >
-                                            {papers.map((paper, index) => (
-                                              <motion.div
-                                                key={paper._id}
-                                                layout
-                                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                exit={{ opacity: 0, scale: 0.9 }}
-                                                transition={{ 
-                                                  duration: 0.3, 
-                                                  delay: index * 0.05,
-                                                  ease: "easeOut"
-                                                }}
-                                              >
-                                                <DocumentCard
-                                                  document={{
-                                                    _id: paper._id,
-                                                    entityId: paper.entityId,
-                                                    entityType: paper.entityType,
-                                                    metadata: {
-                                                      title: paper.metadata.title || 'Untitled',
-                                                      author: paper.metadata.author || 'No author',
-                                                      status: paper.metadata.status || 'draft',
-                                                      createdAt: paper.metadata.createdAt,
-                                                      updatedAt: paper.metadata.updatedAt || paper.metadata.createdAt,
-                                                    },
-                                                    collaborators: paper.collaborators || [],
-                                                  }}
-                                                  onShare={() => handleSharePaper(paper._id)}
-                                                  onDelete={() => handleDeletePaper(paper._id)}
-                                                  showDeleteDialog={showDeleteDialog}
-                                                />
-                                              </motion.div>
-                                            ))}
-                                          </motion.div>
+                                            <motion.div
+                                                key="grid"
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -20 }}
+                                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+                                            >
+                                                {papers.map((paper, index) => (
+                                                    <motion.div
+                                                        key={paper._id}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.9 }}
+                                                        transition={{
+                                                            duration: 0.3,
+                                                            delay: index * 0.05,
+                                                            ease: "easeOut"
+                                                        }}
+                                                    >
+                                                        <DocumentCard
+                                                            document={{
+                                                                _id: paper._id,
+                                                                entityId: paper.entityId,
+                                                                entityType: paper.entityType,
+                                                                metadata: {
+                                                                    title: paper.metadata.title || 'Untitled',
+                                                                    author: paper.metadata.author || 'No author',
+                                                                    status: paper.metadata.status || 'draft',
+                                                                    createdAt: paper.metadata.createdAt,
+                                                                    updatedAt: paper.metadata.updatedAt || paper.metadata.createdAt,
+                                                                },
+                                                                collaborators: paper.collaborators || [],
+                                                            }}
+                                                            onShare={() => handleSharePaper(paper._id)}
+                                                            onDelete={() => handleDeletePaper(paper._id)}
+                                                            showDeleteDialog={showDeleteDialog}
+                                                        />
+                                                    </motion.div>
+                                                ))}
+                                            </motion.div>
                                         )}
                                     </AnimatePresence>
                                 )}
@@ -456,7 +464,7 @@ export default function AllPapersPage() {
 
                         {/* Pagination controls */}
                         {totalPages > 1 && (
-                            <motion.div 
+                            <motion.div
                                 className="flex justify-center items-center gap-2 mt-8"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -496,6 +504,7 @@ export default function AllPapersPage() {
                     documentTitle={selectedPaper.metadata.title}
                     documentId={selectedPaper.entityId}
                     documentType={selectedPaper.entityType as 'NbcPaper' | 'MarketReport'}
+                    onInviteSuccess={fetchPapers}
                 />
             )}
 

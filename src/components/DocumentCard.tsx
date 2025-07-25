@@ -11,12 +11,14 @@ interface DocumentCardProps {
     _id: string;
     entityId: string;
     entityType: string;
+    createdBy?: string;
     metadata: {
       title: string;
       author: string;
       status: string;
       createdAt: string;
       updatedAt: string;
+      createdBy?: string;
     };
     collaborators?: Collaborator[];
   };
@@ -156,7 +158,11 @@ export default function DocumentCard({
       </div>
     );
   };
-
+const documentAuthor =document.metadata.createdBy;
+const user = localStorage.getItem('user');
+const userId = user ? JSON.parse(user).id : null;
+const userIsAuthor = documentAuthor ? documentAuthor === userId : false;
+console.log("userIsAuthor", documentAuthor, userId, userIsAuthor)
   // Get collaborators to display (limit to 5 for overlapping avatars)
   const collaboratorsToShow = document.collaborators?.slice(0, 5) || [];
   const remainingCount = (document.collaborators?.length || 0) - collaboratorsToShow.length;
@@ -198,7 +204,7 @@ export default function DocumentCard({
                 className="absolute top-full right-0 mt-2 w-[300px] bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-[9999]"
                 onClick={(e) => e.stopPropagation()}
               >
-                {onShare && (
+                {onShare && userIsAuthor && (
                   <button
                     onClick={handleShareClick}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer"
