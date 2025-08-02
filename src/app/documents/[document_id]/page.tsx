@@ -4,13 +4,14 @@ import { useParams, useSearchParams } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { PencilSquareIcon, CheckIcon, PlusIcon, ArrowDownTrayIcon, PaperAirplaneIcon, ArrowPathIcon, EllipsisVerticalIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from "framer-motion";
-import { usePDF } from 'react-to-pdf';
+import { usePDF, Resolution } from 'react-to-pdf';
 import Link from "next/dist/client/link";
 import Navbar from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { Socket } from "@/lib/socket";
 import { Section, Collaborator, User } from "@/lib/interfaces";
 import { getFlag } from '@/components/Flag';
+import NBCPaperPreview from '@/components/NBCPaperPreview';
 const DeleteModal = dynamic(() => import('@/components/DeleteModal'), {
   ssr: false,
   loading: () => <div className="hidden" />
@@ -68,10 +69,11 @@ export default function DocumentEditorPage() {
   const { toPDF, targetRef } = usePDF({
     filename: `${titleInput.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_nbc_paper.pdf`,
     page: {
-      margin: 30,
+      // margin: 20,
       format: 'a4',
-      orientation: 'portrait'
+      orientation: 'portrait',
     },
+    resolution: Resolution.HIGH,
     method: 'save'
   });
 
@@ -1444,55 +1446,100 @@ export default function DocumentEditorPage() {
                     </div>}
 
                     {/* Document Content */}
-                    <div className="space-y-8">
-                      {sections.map((section, idx) => (
-                        <motion.div
-                          key={section.id}
-                          id={`section-${section.id}`}
-                          initial={{ opacity: 0, y: 30 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.15, duration: 0.6, type: "spring", stiffness: 60 }}
-                          className="relative"
-                        >
-                          {/* Section Header with single color */}
-                          {idx === 0 && documentType === "nbc" ? <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 !text-[#476f88] text-center">
-                              New Business Committee Paper
-                            </h2>
-                          </div> : idx === 0 && documentType === "market" ? <div className="mb-4">
-                            <h2 className="text-2xl font-bold !text-[#476f88] text-center ">
-                              {year} at a Glance
-                            </h2>
-                          </div>: <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
-                            {section.title}
-                          </h2>}
+                    {documentType === "nbc" ? (
+                      <NBCPaperPreview 
+                        data={{
+                          reference: "NB147",
+                          circulationDate: "24 March 2025",
+                          structuringLead: structuringLeads || "Samuel Adeogun",
+                          dealName: companyName || "CrossBoundary Energy",
+                          sector: "Renewable Energy",
+                          transactionType: "Direct Guarantee",
+                          sponsors: sponsors || "CrossBoundary Energy Holdings – 100%",
+                          companyDescription: description || "CrossBoundary Energy Telecom Solutions Nigeria Limited (\"CBET\" or the \"Company\") is a special purpose vehicle created by CrossBoundary Energy (\"CBE\") to construct and operate hybrid renewable energy solutions for telecommunication tower companies (TowerCos) in Africa.",
+                          portfolioExposure: {
+                            increase: "24.6 Bln",
+                            total: "24.6 Bln",
+                            limit: "116.9 Bln#"
+                          },
+                          organizationProfile: {
+                            nameOfInstitution: companyName || "CrossBoundary Energy Telecom Solutions Nigeria Limited",
+                            dateOfIncorporation: "The Company was incorporated as a Private Company limited by shares on 15th May 2023 with company registration number - 6967799",
+                            natureOfBusiness: "Provision of distributed solar energy generation solutions, trading and maintenance of solar panels and equipment, including import and export."
+                          },
+                          governance: {
+                            directors: ["Tilleard Mathew James", "Joubert Pieter Ian"],
+                            shareholding: "The share capital of the Company is 100,000,000 divided into 100,000,000 Ordinary shares of N1 each: 1. CrossBoundary Energy Holdings [C137785]¹⁰ - 100,000,000."
+                          },
+                          flagReport: {
+                            politicallyExposedPersons: "NIL",
+                            creditHistory: "Commercial No hit report",
+                            flags: "NIL"
+                          },
+                          kycDocuments: [
+                            "Certificate of Incorporation of CrossBoundary Energy Telecom Solutions Nigeria Limited dated 15th May 2023.",
+                            "Certified Extract of the Memorandum and Articles of Association of CrossBoundary Energy Telecom Solutions Nigeria Limited dated 17 May 2023.",
+                            "Certificate of Incorporation of CrossBoundary Energy Holdings (CBEH) dated 14 April 2016.",
+                            "CBEH Constitution executed 14 July 2022.",
+                            "Constitution of CrossBoundary Energy Management executed 20 October 2022.",
+                            "CTC of CBEH Register of Shareholders of Ordinary Shares generated on 17 July 2024.",
+                            "CTC of CBEH Register of Shareholders of Preference Shares generated on 17 July 2024.",
+                            "CTC of CrossBoundary Energy Management Register of Directors generated on 23 July 2024.",
+                            "CTC of CBEH Register of Directors as at 20 August 2024.",
+                            "CTC of CrossBoundary Energy Management's Register of Shareholders (Class A Shares) generated on 23 July 2024.",
+                            "CTC of CrossBoundary Energy Management's Register of Shareholders (Class B Shares) generated on 23 July 2024.",
+                            "CTC of CrossBoundary Energy Management's Register of Shareholders (Class D Shares) generated on 23 July 2024."
+                          ],
+                          date: "17 March 2025 (Updated 24 March 2025)."
+                        }}
+                      />
+                    ) : (
+                      <div className="space-y-8">
+                        {sections.map((section, idx) => (
+                          <motion.div
+                            key={section.id}
+                            id={`section-${section.id}`}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.15, duration: 0.6, type: "spring", stiffness: 60 }}
+                            className="relative"
+                          >
+                            {/* Section Header with single color */}
+                            {idx === 0 && documentType === "market" ? <div className="mb-4">
+                              <h2 className="text-2xl font-bold !text-[#476f88] text-center ">
+                                {year} at a Glance
+                              </h2>
+                            </div>: <h2 className="text-2xl font-bold mb-4 !text-[#476f88]">
+                              {section.title}
+                            </h2>}
 
-                          {/* Section Content */}
-                          <div className={`text-gray-700 text-sm prose max-w-none ${idx > 0 ? '' : '!bg-[#FFF7ED] p-4 rounded-lg'}`} dangerouslySetInnerHTML={{ __html: section.content }} />
+                            {/* Section Content */}
+                            <div className={`text-gray-700 text-sm prose max-w-none ${idx > 0 ? '' : '!bg-[#FFF7ED] p-4 rounded-lg'}`} dangerouslySetInnerHTML={{ __html: section.content }} />
 
-                          {/* Subsections */}
-                          {section.subsections && section.subsections.length > 0 && (
-                            <div className="mt-4 columns-2 break-normal gap-8" style={{ wordBreak: "keep-all" }}>
-                              {section.subsections.map((subsection, subIdx) => (
-                                <motion.div
-                                  key={`${section.id}-sub-${subIdx}`}
-                                  id={`subsection-${section.id}-sub-${subIdx}`}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
-                                  className="mb-6"
-                                >
-                                  <h3 className="text-lg font-semibold !text-[#476f88]">
-                                    {subsection.title}
-                                  </h3>
-                                  <div style={{ wordBreak: "keep-all", marginTop: "0 !important" }} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
-                                </motion.div>
-                              ))}
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
+                            {/* Subsections */}
+                            {section.subsections && section.subsections.length > 0 && (
+                              <div className="mt-4 columns-2 break-normal gap-8" style={{ wordBreak: "keep-all" }}>
+                                {section.subsections.map((subsection, subIdx) => (
+                                  <motion.div
+                                    key={`${section.id}-sub-${subIdx}`}
+                                    id={`subsection-${section.id}-sub-${subIdx}`}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: (idx * 0.15) + (subIdx * 0.1), duration: 0.4 }}
+                                    className="mb-6"
+                                  >
+                                    <h3 className="text-lg font-semibold !text-[#476f88]">
+                                      {subsection.title}
+                                    </h3>
+                                    <div style={{ wordBreak: "keep-all", marginTop: "0 !important" }} className="mt-0 text-gray-700 text-sm prose max-w-none break-keep text-justify" dangerouslySetInnerHTML={{ __html: subsection.htmlContent }} />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   // Edit Mode - Show sections with edit functionality
