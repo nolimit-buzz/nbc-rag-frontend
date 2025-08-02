@@ -141,7 +141,7 @@ Details of the off-take arrangement for the proposed Project are presented below
                                     <li>Scalable business model which is easily replicable in other locations and with other quality counterparties;</li>
                                     <li>Cost-effective and environmentally friendly in comparison to alternative power sources such as diesel, and petrol generators;</li>
                                     <li>Cost-reflective tariffs with clearly defined mechanism for inflation adjustment; and</li>
-                                    <li>Long-term assets' life of solar panels compared with existing energy sources.</li>
+                                    <li>Long-term assets&apos; life of solar panels compared with existing energy sources.</li>
                                 </ul>
                             </td>
                         </tr>
@@ -151,7 +151,7 @@ Details of the off-take arrangement for the proposed Project are presented below
                         </tr>
                         <tr>
                             <td className="w-5/6 p-2 font-semibold border border-gray-300 text-xs">Our Guarantee</td>
-                            <td className="w-1/6 p-2 border border-gray-300 text-xs" colSpan={4}>The Company is seeking to raise up to NGN24.6 billion to be backed by InfraCredit's Guarantee and BII, as Co-Guarantor ("the Transaction").</td>
+                            <td className="w-1/6 p-2 border border-gray-300 text-xs" colSpan={4}>The Company is seeking to raise up to NGN24.6 billion to be backed by InfraCredit&apos;s Guarantee and BII, as Co-Guarantor (&quot;the Transaction&quot;).</td>
                         </tr>
                         <tr>
                             <td className="w-5/6 p-2 font-semibold border border-gray-300 text-xs">Expected Use of Proceeds</td>
@@ -200,12 +200,12 @@ Details of the off-take arrangement for the proposed Project are presented below
             <div className="mb-8">
                 <h3 className="font-semibold mb-2">2. Market Overview</h3>
                 <div className="text-xs leading-relaxed space-y-2">
-                    <p>
-                        Nigeria's aggregate local electricity demand is estimated at 180,000MW. However, available supply falls significantly short, with an installed capacity of c.11,000MW, only c.8,000MW operational, and just 3,000-4,500MW effectively reaching end-users due to grid constraints and system failures. The government privatized the electricity sector in 2013 to improve power supply.
-                    </p>
-                    <p>
-                        Only 40% of Nigeria's population has access to the national grid, which is unreliable. Businesses and households rely on diesel and petrol generators, generating over 20,000MW at an annual cost of US$9.2 billion (CAPEX and OPEX), according to a 2017 World Bank report. These solutions are expensive and environmentally damaging, underscoring the importance of renewable energy development as a cleaner, cost-effective alternative for extending power access to unserved and underserved communities.
-                    </p>
+                                            <p>
+                            Nigeria&apos;s aggregate local electricity demand is estimated at 180,000MW. However, available supply falls significantly short, with an installed capacity of c.11,000MW, only c.8,000MW operational, and just 3,000-4,500MW effectively reaching end-users due to grid constraints and system failures. The government privatized the electricity sector in 2013 to improve power supply.
+                        </p>
+                                            <p>
+                            Only 40% of Nigeria&apos;s population has access to the national grid, which is unreliable. Businesses and households rely on diesel and petrol generators, generating over 20,000MW at an annual cost of US$9.2 billion (CAPEX and OPEX), according to a 2017 World Bank report. These solutions are expensive and environmentally damaging, underscoring the importance of renewable energy development as a cleaner, cost-effective alternative for extending power access to unserved and underserved communities.
+                        </p>
                     <p>
                         53,460 base transceiver stations (BTS) were deployed in Nigeria between 2016-2020, estimated to use 1.25 million litres of diesel per day for operations. Adopting renewable energy solutions from companies like CBET, Arnergy, and Energy Vision reduces spiking operating costs and CO2 emissions associated with diesel-powered generators.
                     </p>
@@ -218,7 +218,7 @@ Details of the off-take arrangement for the proposed Project are presented below
                 <ul className="text-xs list-disc list-inside space-y-1 mb-4">
                     <li>Expected useful life of underlying project equipment/assets;</li>
                     <li>Analysis of the cost differential of the four (4) POC sites;</li>
-                    <li>Sponsor's support for the project – timely dollar equity injection;</li>
+                    <li>Sponsor&apos;s support for the project – timely dollar equity injection;</li>
                     <li>Technical validation of the Project cost;</li>
                 </ul>
                 <hr className="my-4" />
@@ -229,7 +229,7 @@ Details of the off-take arrangement for the proposed Project are presented below
                     <p>⁹ https://businessday.ng/energy/article/firms</p>
                 </div>
                 <ul className="text-xs list-disc list-inside space-y-1 mt-4">
-                    <li>Assessment of the Project's forecasted cash flow ability to service debt and ring-fencing in line with the project finance structure;</li>
+                    <li>Assessment of the Project&apos;s forecasted cash flow ability to service debt and ring-fencing in line with the project finance structure;</li>
                     <li>Review and confirmation of terms of the IHS ESA, including the evaluation of Service Level Agreements (SLAs), termination clauses, tenor, provisions for adjustable cost reflective tariffs, and payment assurance from the Sponsor;</li>
                     <li>Assessment of agreements with the EPC and O&M contractor, including backup arrangements for routine maintenance, overhauls, and refurbishment;</li>
                     <li>Procedure for procurement of equipment to mitigate the impact of FX changes;</li>
@@ -340,9 +340,9 @@ Details of the off-take arrangement for the proposed Project are presented below
                                         <li>CTC of CBEH Register of Shareholders of Preference Shares generated on 17 July 2024.</li>
                                         <li>CTC of CrossBoundary Energy Management Register of Directors generated on 23 July 2024.</li>
                                         <li>CTC of CBEH Register of Directors as at 20 August 2024.</li>
-                                        <li>CTC of CrossBoundary Energy Management's Register of Shareholders (Class A Shares) generated on 23 July 2024.</li>
-                                        <li>CTC of CrossBoundary Energy Management's Register of Shareholders (Class B Shares) generated on 23 July 2024.</li>
-                                        <li>CTC of CrossBoundary Energy Management's Register of Shareholders (Class D Shares) generated on 23 July 2024.</li>
+                                        <li>CTC of CrossBoundary Energy Management&apos;s Register of Shareholders (Class A Shares) generated on 23 July 2024.</li>
+                                        <li>CTC of CrossBoundary Energy Management&apos;s Register of Shareholders (Class B Shares) generated on 23 July 2024.</li>
+                                        <li>CTC of CrossBoundary Energy Management&apos;s Register of Shareholders (Class D Shares) generated on 23 July 2024.</li>
                                     </ol>
                                 )}
                             </td>

@@ -1,9 +1,8 @@
 'use client';
-import React, { useState, useCallback } from 'react';
-import { FaThList, FaThLarge, FaPlus, FaDownload, FaEllipsisV } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaThList, FaThLarge, FaPlus, FaEllipsisV } from 'react-icons/fa';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 import { sidebarGroups } from '@/lib/constants';
@@ -35,12 +34,10 @@ interface Template {
 export default function TemplatesPage() {
     const [templates, setTemplates] = useState<Template[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const router = useRouter();
 
     // Popover states
@@ -54,7 +51,7 @@ export default function TemplatesPage() {
     ];
 
     // Only real templates
-    const mockTemplates: Template[] = [
+    const mockTemplates: Template[] = React.useMemo(() => [
         {
             _id: '1',
             name: 'Market Report',
@@ -77,7 +74,7 @@ export default function TemplatesPage() {
             downloads: 32,
             isActive: true
         }
-    ];
+    ], []);
 
     React.useEffect(() => {
         // Simulate API call
@@ -100,13 +97,11 @@ export default function TemplatesPage() {
         return acc;
     }, {} as Record<string, number>);
 
-    const handleDownload = (templateId: string) => {
-        // Handle template download
-        console.log('Downloading template:', templateId);
-    };
+
 
     const handleCreateTemplate = () => {
-        setShowCreateModal(true);
+        // TODO: Implement create template functionality
+        console.log('Create template clicked');
     };
 
     const handleTemplateSelect = (templateId: string) => {
@@ -281,8 +276,6 @@ export default function TemplatesPage() {
                                 </div>
                             ) : filteredTemplates.length === 0 ? (
                                 <div className="text-center py-10 text-muted-foreground">No templates found.</div>
-                            ) : error ? (
-                                <div className="text-center py-10 text-red-500">{error}</div>
                             ) : (
                                 <AnimatePresence mode="wait">
                                     {viewMode === 'grid' ? (

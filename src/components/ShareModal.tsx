@@ -90,13 +90,7 @@
     };
   }, [query]); 
 
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
+
 
 
 
